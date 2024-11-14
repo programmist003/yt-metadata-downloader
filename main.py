@@ -1,7 +1,6 @@
 from googleapiclient.discovery import build
 import toml
 from icecream import ic
-from urllib.request import urlopen
 
 
 DEVELOPER_KEY = toml.load("config.toml")["api_key"]

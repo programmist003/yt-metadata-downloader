@@ -19,12 +19,12 @@ def get_video_id(url):
 def save_video_data(video_id):
     """Save video data to a JSON file"""
     request = youtube.videos().list(
-        part="id,snippet",
+        part="contentDetails, id, liveStreamingDetails, localizations, paidProductPlacementDetails, player, recordingDetails, snippet, statistics, status, topicDetails",
         id=video_id,
     )
     response = request.execute()
-    with open(f"{video_id}.json", "w") as f:
-        json.dump(response, f)
+    with open(f"{video_id}.json", "w", encoding="utf-8") as f:
+        json.dump(response, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":

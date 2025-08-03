@@ -26,11 +26,25 @@ def save_video_data(video_id):
     with open(f"{video_id}.json", "w", encoding="utf-8") as f:
         json.dump(response, f, ensure_ascii=False, indent=4)
 
+def get_resource_type(url: str) -> tuple[str|None, str|None]:
+    """Returns type of resource and its id"""
+    types = {
+        "watch": ("video", lambda x: x.split("=")[-1]),
+        "playlist": ("playlist", lambda x: x.split("=")[-1]),
+        "post": ("post", lambda x: x.split("/")[-1])
+    }
+    for type, func in types.items():
+        if type in url:
+            return func[0], func[1](url)
+    return None, None
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("Usage: python3 save_video_data.py URL")
         sys.exit(1)
-    video_id = get_video_id(sys.argv[1])
-    ic(video_id)
-    save_video_data(video_id)
+    video_ids = [get_video_id(link) for link in sys.argv[1:]]
+    for video_id in video_ids:
+        if get_resource_type(video_id)[0] != "video":
+            continue
+        ic(video_id)
+        save_video_data(video_id)

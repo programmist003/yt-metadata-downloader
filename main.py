@@ -40,11 +40,9 @@ def get_resource_type(url: str) -> tuple[str|None, str|None]:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 save_video_data.py URL")
+        print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
     video_ids = [get_video_id(link) for link in sys.argv[1:]]
     for video_id in video_ids:
-        if get_resource_type(video_id)[0] != "video":
-            continue
         ic(video_id)
         save_video_data(video_id)

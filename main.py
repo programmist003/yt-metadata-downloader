@@ -3,17 +3,28 @@ import json
 from googleapiclient.discovery import build
 import toml
 from icecream import ic
-
+from furl import furl
 
 DEVELOPER_KEY = toml.load("config.toml")["api_key"]
 # API client
 youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
 # https://developers.google.com/youtube/v3/docs/videos/list
 
+resource_kinds = {}
 
-def get_video_id(url):
+
+def check_domain(url: str) -> bool:
+    """Check if the URL is a YouTube URL"""
+    host = furl(url).host
+    return host in ("youtube.com", "www.youtube.com", "youtu.be")
+
+
+def get_video_id(url: str) -> str | None:
     """Get video ID from a YouTube URL"""
-    return url.split("=")[-1]
+    f = furl(url)
+    if not check_domain(url) or f.path != "/watch":
+        return None
+    return f.args.get("v")
 
 
 def save_video_data(video_id):
@@ -26,17 +37,19 @@ def save_video_data(video_id):
     with open(f"{video_id}.json", "w", encoding="utf-8") as f:
         json.dump(response, f, ensure_ascii=False, indent=4)
 
-def get_resource_type(url: str) -> tuple[str|None, str|None]:
+
+def get_resource_type(url: str) -> tuple[str | None, str | None]:
     """Returns type of resource and its id"""
     types = {
         "watch": ("video", lambda x: x.split("=")[-1]),
         "playlist": ("playlist", lambda x: x.split("=")[-1]),
-        "post": ("post", lambda x: x.split("/")[-1])
+        "post": ("post", lambda x: x.split("/")[-1]),
     }
     for type, func in types.items():
         if type in url:
             return func[0], func[1](url)
     return None, None
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

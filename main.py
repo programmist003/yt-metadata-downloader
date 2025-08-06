@@ -1,9 +1,12 @@
+"""Main application. Save video data to a JSON file"""
+
 import sys
 import json
 from googleapiclient.discovery import build
 import toml
 from icecream import ic
 from furl import furl
+from urlparse import check_domain
 
 DEVELOPER_KEY = toml.load("config.toml")["api_key"]
 # API client
@@ -11,12 +14,6 @@ youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
 # https://developers.google.com/youtube/v3/docs/videos/list
 
 resource_kinds = {}
-
-
-def check_domain(url: str) -> bool:
-    """Check if the URL is a YouTube URL"""
-    host = furl(url).host
-    return host in ("youtube.com", "www.youtube.com", "youtu.be")
 
 
 def get_video_id(url: str) -> str | None:

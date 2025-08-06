@@ -7,6 +7,7 @@ import toml
 from icecream import ic
 from furl import furl
 from urlparse import check_domain
+from kinds.video import get_video_id
 
 DEVELOPER_KEY = toml.load("config.toml")["api_key"]
 # API client
@@ -14,14 +15,6 @@ youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
 # https://developers.google.com/youtube/v3/docs/videos/list
 
 resource_kinds = {}
-
-
-def get_video_id(url: str) -> str | None:
-    """Get video ID from a YouTube URL"""
-    f = furl(url)
-    if not check_domain(url) or f.path != "/watch":
-        return None
-    return f.args.get("v")
 
 
 def save_video_data(video_id):

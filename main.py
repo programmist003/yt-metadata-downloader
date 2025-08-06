@@ -27,7 +27,9 @@ def get_video_id(url: str) -> str | None:
 def save_video_data(video_id):
     """Save video data to a JSON file"""
     request = youtube.videos().list(
-        part="contentDetails, id, liveStreamingDetails, localizations, paidProductPlacementDetails, player, recordingDetails, snippet, statistics, status, topicDetails",
+        part="contentDetails, id, liveStreamingDetails, "
+        "localizations, paidProductPlacementDetails, player, "
+        "recordingDetails, snippet, statistics, status, topicDetails",
         id=video_id,
     )
     response = request.execute()

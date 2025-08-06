@@ -1,33 +1,12 @@
 """Main application. Save video data to a JSON file"""
 
 import sys
-import json
-from googleapiclient.discovery import build
-import toml
 from icecream import ic
-from furl import furl
-from urlparse import check_domain
 from kinds.video import get_video_id
+from kinds.video import save_video_data
 
-DEVELOPER_KEY = toml.load("config.toml")["api_key"]
-# API client
-youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
-# https://developers.google.com/youtube/v3/docs/videos/list
 
 resource_kinds = {}
-
-
-def save_video_data(video_id):
-    """Save video data to a JSON file"""
-    request = youtube.videos().list(  # pylint: disable=no-member
-        part="contentDetails, id, liveStreamingDetails, "
-        "localizations, paidProductPlacementDetails, player, "
-        "recordingDetails, snippet, statistics, status, topicDetails",
-        id=video_id,
-    )
-    response = request.execute()
-    with open(f"{video_id}.json", "w", encoding="utf-8") as f:
-        json.dump(response, f, ensure_ascii=False, indent=4)
 
 
 def get_resource_type(url: str) -> tuple[str | None, str | None]:

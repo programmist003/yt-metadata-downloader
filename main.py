@@ -16,7 +16,7 @@ def get_resource_type(url: str) -> tuple[str | None, str | None]:
         "playlist": ("playlist", lambda x: x.split("=")[-1]),
         "post": ("post", lambda x: x.split("/")[-1]),
     }
-    for type, func in types.items():
+    for type, func in types.items(): # pylint: disable=redefined-builtin
         if type in url:
             return func[0], func[1](url)
     return None, None

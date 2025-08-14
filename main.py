@@ -2,11 +2,13 @@
 
 import sys
 from icecream import ic
-from kinds.video import get_video_id
-from kinds.video import save_video_data
+from kinds.kind import Kind
+from kinds.video import Video
+from properties.resource_id_getter import ResourceIdGetter
+from type_aliases import *  # pylint: disable=wildcard-import
 
 
-resource_kinds = {}
+resource_kinds: list[Kind] = [Video()]
 
 
 def get_resource_type(url: str) -> tuple[str | None, str | None]:
@@ -16,17 +18,26 @@ def get_resource_type(url: str) -> tuple[str | None, str | None]:
         "playlist": ("playlist", lambda x: x.split("=")[-1]),
         "post": ("post", lambda x: x.split("/")[-1]),
     }
-    for type, func in types.items(): # pylint: disable=redefined-builtin
+    for type, func in types.items():  # pylint: disable=redefined-builtin
         if type in url:
             return func[0], func[1](url)
     return None, None
+
+
+def get_urls_kinds_and_ids(urls: set[URL]) -> dict[URL, list[tuple[Kind, Id | None]]]:
+    """Get resource type, kind and id for each URL"""
+    return {
+        url: [
+            (kind, kind.get(ResourceIdGetter, lambda x: None)(url))
+            for kind in resource_kinds
+        ]
+        for url in urls
+    }
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
-    video_ids = [get_video_id(link) for link in sys.argv[1:]]
-    for video_id in video_ids:
-        ic(video_id)
-        save_video_data(video_id)
+    video_ids = get_urls_kinds_and_ids(set(sys.argv[1:]))
+    ic(video_ids)

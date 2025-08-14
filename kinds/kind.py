@@ -1,10 +1,12 @@
 """Resource kind base class module"""
+
 from typing import Self
+
 
 class Kind:
     """Resource kind base class"""
 
-    _properties: dict[type, object]
+    _properties: dict[type, object] = dict()
 
     def __init__(self, *properties: list):
         """Initialize the kind"""
@@ -15,9 +17,20 @@ class Kind:
         self._properties.update({type(prop): prop for prop in properties})
         return self
 
-    def get(self, property_type: type) -> object:
+    def get[T1, T2]( # pylint: disable=invalid-name
+        self,
+        property_type: T1 | type[T1],  # The order in "T1 | type[T1]" matters
+        default: T2 = None,
+    ) -> T1 | T2:
         """Get a component from the kind"""
-        return self._properties[property_type]
+        return self._properties.get(
+            property_type if isinstance(property_type, type) else type(property_type),
+            (
+                default
+                if isinstance(property_type, type) or default is not None
+                else property_type
+            ),
+        )  # type: ignore
 
     def delete(self, property_type: type) -> None:
         """Delete a component from the kind"""

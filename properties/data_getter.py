@@ -1,9 +1,8 @@
 """Data getter module"""
 
-from typing import Any, Callable, NamedTuple
+from typing import Callable, NamedTuple
 
-Id = str
-DataGetterFunction = Callable[[Id], None]
+DataGetterFunction = Callable[[list[str]], None]
 
 
 class DataGetter(NamedTuple):
@@ -11,5 +10,5 @@ class DataGetter(NamedTuple):
 
     data_getter: DataGetterFunction
 
-    def __call__(self, resource_id: Id) -> Any:
+    def __call__(self, resource_id: list[str]) -> None:
         return self.data_getter(resource_id)

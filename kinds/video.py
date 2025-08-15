@@ -5,7 +5,7 @@ from furl import furl
 from kinds.kind import Kind
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
-from urlparse import check_domain
+from utils import check_domain
 from auth import youtube
 
 

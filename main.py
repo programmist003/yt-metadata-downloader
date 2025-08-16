@@ -1,10 +1,10 @@
 """Main application. Save video data to a JSON file"""
 
 import sys
-from icecream import ic
 import pandas as pd
 from kinds.kind import Kind
 from kinds.video import Video
+from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
@@ -25,7 +25,7 @@ def get_resource_type(url: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def get_urls_kinds_and_ids(urls: set[URL])-> dict[URL, dict[Kind, Id | None]]:
+def get_urls_kinds_and_ids(urls: set[URL]) -> dict[URL, dict[Kind, Id | None]]:
     """Get resource type, kind and id for each URL"""
     return {
         url: {
@@ -40,5 +40,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
-    video_ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
-    ic(video_ids)
+    ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
+    for kind, ids in ids.iterrows():
+        kind.get(DataGetter, lambda x: None)(  # type: ignore
+            list(filter(lambda x: x is not None, set(ids.values)))
+        )

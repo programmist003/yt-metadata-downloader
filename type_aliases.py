@@ -2,3 +2,4 @@
 
 Id = str
 URL = str
+Property = object

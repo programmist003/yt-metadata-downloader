@@ -2,7 +2,7 @@
 
 from typing import Callable, NamedTuple
 
-DataGetterFunction = Callable[[list[str]], None]
+DataGetterFunction = Callable[[list[str]], list[dict]]
 
 
 class DataGetter(NamedTuple):
@@ -10,5 +10,5 @@ class DataGetter(NamedTuple):
 
     data_getter: DataGetterFunction
 
-    def __call__(self, resource_id: list[str]) -> None:
+    def __call__(self, resource_id: list[str]) -> list[dict]:
         return self.data_getter(resource_id)

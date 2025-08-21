@@ -6,7 +6,7 @@ from furl import furl
 from kinds.kind import Kind
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
-from utils import check_domain, prepare_list_method_method, save_as_jsons
+from utils import check_domain, prepare_list_method_method
 from auth import youtube
 
 
@@ -40,12 +40,11 @@ def save_video_data(video_id):
         json.dump(response, f, ensure_ascii=False, indent=4)
 
 
-def save_videos_data(video_ids: list[str]):
+def save_videos_data(video_ids: list[str])->list[dict]:
     """Save video data to a JSON file"""
-    videos_data = prepare_list_method_method(
+    return prepare_list_method_method(
         youtube.videos(), # type: ignore # pylint: disable=no-member
         "contentDetails, id, liveStreamingDetails, "
         "localizations, paidProductPlacementDetails, player, "
         "recordingDetails, snippet, statistics, status, topicDetails",
     )(video_ids)
-    save_as_jsons(videos_data)

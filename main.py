@@ -7,6 +7,7 @@ from kinds.video import Video
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
+from utils import save_as_jsons
 
 
 resource_kinds: list[Kind] = [Video()]
@@ -42,6 +43,8 @@ if __name__ == "__main__":
         sys.exit(1)
     ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
     for kind, ids in ids.iterrows():
-        kind.get(DataGetter, lambda x: None)(  # type: ignore
-            list(filter(lambda x: x is not None, set(ids.values)))
+        save_as_jsons(
+            kind.get(DataGetter, lambda x: None)(  # type: ignore
+                list(filter(lambda x: x is not None, set(ids.values)))
+            )
         )

@@ -2,6 +2,7 @@
 
 from urllib.request import urlopen
 from typing import Callable
+from icecream import ic # pylint: disable=unused-import
 from googleapiclient.discovery import Resource
 from toolz import partition_all
 from furl import furl
@@ -27,14 +28,14 @@ def prepare_list_method_method(resource: Resource, parts: str)->Callable[[list[I
     def wrapper(ids: list[Id]):
         PARTITION_LENGTH = 50  # pylint: disable=invalid-name
         partitions = list(partition_all(PARTITION_LENGTH, ids))
-        videos_data: list = []
+        videos_data: list[dict] = list()
         for partition in partitions:
             request = resource.list(  # type: ignore
                 part=parts,
-                id=partition,
+                id=list(partition),
                 maxResults=PARTITION_LENGTH,
             )
-            videos_data.append(request.execute().get("items", []))
+            videos_data.extend(request.execute().get("items", list()))
         return videos_data
 
     return wrapper

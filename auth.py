@@ -1,3 +1,4 @@
+"""Authentication module"""
 import toml
 from googleapiclient.discovery import build
 

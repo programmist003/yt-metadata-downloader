@@ -6,7 +6,7 @@ from furl import furl
 from kinds.kind import Kind
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
-from utils import check_domain, prepare_list_method_method
+from utils import check_domain, prepare_list_method_method, save_as_jsons
 from auth import youtube
 
 
@@ -48,8 +48,4 @@ def save_videos_data(video_ids: list[str]):
         "localizations, paidProductPlacementDetails, player, "
         "recordingDetails, snippet, statistics, status, topicDetails",
     )(video_ids)
-    ic(videos_data)
-    for video_data in videos_data:
-        video_id = video_data["id"]
-        with open(f"video[{video_id}].json", "w", encoding="utf-8") as f:
-            json.dump(video_data, f, ensure_ascii=False, indent=4)
+    save_as_jsons(videos_data)

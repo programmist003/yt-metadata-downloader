@@ -1,5 +1,6 @@
 """URL parser module"""
 
+import json
 from urllib.request import urlopen
 from typing import Callable
 from icecream import ic # pylint: disable=unused-import
@@ -39,3 +40,11 @@ def prepare_list_method_method(resource: Resource, parts: str)->Callable[[list[I
         return videos_data
 
     return wrapper
+
+def save_as_jsons(resources_data: list[dict]) -> None:
+    """Save data to JSON files"""
+    for resource_data in resources_data:
+        resource_id = resource_data["id"]
+        resource_kind = resource_data["kind"].split("#")[1]
+        with open(f"{resource_kind}[{resource_id}].json", "w", encoding="utf-8") as f:
+            json.dump(resource_data, f, ensure_ascii=False, indent=4)

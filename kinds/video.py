@@ -1,7 +1,7 @@
 """YouTube video resource kind module"""
 
 import json
-from icecream import ic
+from icecream import ic # pylint: disable=unused-import
 from furl import furl
 from kinds.kind import Kind
 from properties.data_getter import DataGetter

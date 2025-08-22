@@ -2,12 +2,14 @@
 
 import sys
 import pandas as pd
+from icecream import ic
 from kinds.kind import Kind
 from kinds.video import Video
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from utils import save_as_jsons
+from auth import youtube
 
 
 resource_kinds: list[Kind] = [Video()]
@@ -42,9 +44,18 @@ if __name__ == "__main__":
         print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
     ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
+    data: list[dict] = list()
     for kind, ids in ids.iterrows():
-        save_as_jsons(
-            kind.get(DataGetter, lambda x: None)(  # type: ignore
-                list(filter(lambda x: x is not None, set(ids.values)))
-            )
+        partial_data = kind.get(DataGetter, lambda x: None)(  # type: ignore
+            list(filter(lambda x: x is not None, set(ids.values)))
         )
+        data.extend(partial_data)
+        save_as_jsons(partial_data)
+    category_ids = set()
+    for item in data:
+        category_ids.add(item.get("snippet", dict()).get("categoryId"))
+    category_data = youtube.videoCategories().list(  # type: ignore # pylint: disable=no-member
+        part="id, snippet",
+        id=list(filter(lambda x: x is not None, category_ids)),
+    ).execute().get("items", list())
+    save_as_jsons(category_data)

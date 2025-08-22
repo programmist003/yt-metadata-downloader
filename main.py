@@ -2,7 +2,7 @@
 
 import sys
 import pandas as pd
-from icecream import ic
+from icecream import ic # pylint: disable=unused-import
 from kinds.kind import Kind
 from kinds.video import Video
 from properties.data_getter import DataGetter

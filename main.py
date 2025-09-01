@@ -70,5 +70,5 @@ if __name__ == "__main__":
             continue
         filename = furl(thumbnail_url).path.segments[-1].split(".")
         urllib.request.urlretrieve(
-            thumbnail_url, f"{filename[0]}{item["id"]}.{filename[1]}"
+            thumbnail_url, f"{filename[0]}[{item["id"]}].{filename[1]}"
         )

@@ -27,6 +27,8 @@ def prepare_list_method_method(resource: Resource, parts: str)->Callable[[list[I
     """Prepare a list method for a resource kind"""
 
     def wrapper(ids: list[Id]):
+        if not ids:
+            return list()
         PARTITION_LENGTH = 50  # pylint: disable=invalid-name
         partitions = list(partition_all(PARTITION_LENGTH, ids))
         videos_data: list[dict] = list()

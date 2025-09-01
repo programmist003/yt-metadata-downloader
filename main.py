@@ -2,7 +2,7 @@
 
 import sys
 import pandas as pd
-from icecream import ic # pylint: disable=unused-import
+from icecream import ic  # pylint: disable=unused-import
 from kinds.kind import Kind
 from kinds.video import Video
 from properties.data_getter import DataGetter
@@ -51,11 +51,3 @@ if __name__ == "__main__":
         )
         data.extend(partial_data)
         save_as_jsons(partial_data)
-    category_ids = set()
-    for item in data:
-        category_ids.add(item.get("snippet", dict()).get("categoryId"))
-    category_data = youtube.videoCategories().list(  # type: ignore # pylint: disable=no-member
-        part="id, snippet",
-        id=list(filter(lambda x: x is not None, category_ids)),
-    ).execute().get("items", list())
-    save_as_jsons(category_data)

@@ -7,13 +7,14 @@ import urllib.request
 from icecream import ic  # pylint: disable=unused-import
 from kinds.kind import Kind
 from kinds.video import Video
+from kinds.playlist import Playlist
 from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from utils import save_as_jsons
 
 
-resource_kinds: list[Kind] = [Video()]
+resource_kinds: list[Kind] = [Video(), Playlist()]
 
 
 def get_resource_type(url: str) -> tuple[str | None, str | None]:

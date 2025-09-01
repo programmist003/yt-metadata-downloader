@@ -2,6 +2,8 @@
 
 import sys
 import pandas as pd
+from furl import furl
+import urllib.request
 from icecream import ic  # pylint: disable=unused-import
 from kinds.kind import Kind
 from kinds.video import Video
@@ -9,7 +11,6 @@ from properties.data_getter import DataGetter
 from properties.resource_id_getter import ResourceIdGetter
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from utils import save_as_jsons
-from auth import youtube
 
 
 resource_kinds: list[Kind] = [Video()]
@@ -51,3 +52,22 @@ if __name__ == "__main__":
         )
         data.extend(partial_data)
         save_as_jsons(partial_data)
+    keys_levels = {"default": 1, "medium": 2, "high": 3, "standard": 4, "maxres": 5}
+    for item in data:
+        keys = item.get("snippet", dict()).get("thumbnails", dict()).keys()
+        highest_level = max(map(lambda x: keys_levels[x], keys))
+        thumbnail_url = (
+            item.get("snippet", dict())
+            .get("thumbnails", dict())
+            .get(
+                dict(zip(keys_levels.values(), keys_levels.keys()))[highest_level],
+                dict(),
+            )
+            .get("url")
+        )
+        if thumbnail_url is None:
+            continue
+        filename = furl(thumbnail_url).path.segments[-1].split(".")
+        urllib.request.urlretrieve(
+            thumbnail_url, f"{filename[0]}{item["id"]}.{filename[1]}"
+        )

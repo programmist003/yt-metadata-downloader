@@ -30,6 +30,13 @@ def get_resource_type(url: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+# TODO: fix bug. Does not work properly. Method Kind.get works properly. Example:
+# >> get_urls_kinds_and_ids({"https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1"})
+# >> {'https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1':
+#                                 {<kinds.playlist.Playlist object at 0x000001CE4BBAA900>:
+#                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1',
+#                                  <kinds.video.Video object at 0x000001CE4BBAA7B0>:
+#                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1'}}
 def get_urls_kinds_and_ids(urls: set[URL]) -> dict[URL, dict[Kind, Id | None]]:
     """Get resource type, kind and id for each URL"""
     return {

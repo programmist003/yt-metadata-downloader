@@ -1,9 +1,9 @@
 """Main application. Save video data to a JSON file"""
 
 import sys
+import urllib.request
 import pandas as pd
 from furl import furl
-import urllib.request
 from icecream import ic  # pylint: disable=unused-import
 from kinds.kind import Kind
 from kinds.video import Video
@@ -15,19 +15,6 @@ from utils import save_as_jsons
 
 
 resource_kinds: list[Kind] = [Video(), Playlist()]
-
-
-def get_resource_type(url: str) -> tuple[str | None, str | None]:
-    """Returns type of resource and its id"""
-    types = {
-        "watch": ("video", lambda x: x.split("=")[-1]),
-        "playlist": ("playlist", lambda x: x.split("=")[-1]),
-        "post": ("post", lambda x: x.split("/")[-1]),
-    }
-    for type, func in types.items():  # pylint: disable=redefined-builtin
-        if type in url:
-            return func[0], func[1](url)
-    return None, None
 
 
 # TODO: fix bug. Does not work properly. Method Kind.get works properly. Example:

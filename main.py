@@ -48,6 +48,7 @@ if __name__ == "__main__":
     ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
     data: list[dict] = list()
     for kind, ids in ids.iterrows():
+        print("working with:", kind)
         partial_data = kind.get(DataGetter, lambda x: None)(  # type: ignore
             list(filter(lambda x: x is not None, set(ids.values)))
         )
@@ -68,6 +69,7 @@ if __name__ == "__main__":
         )
         if thumbnail_url is None:
             continue
+        print("downloading", thumbnail_url)
         filename = furl(thumbnail_url).path.segments[-1].split(".")
         urllib.request.urlretrieve(
             thumbnail_url, f"{filename[0]}[{item["id"]}].{filename[1]}"

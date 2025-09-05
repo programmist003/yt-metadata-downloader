@@ -19,18 +19,11 @@ class Kind:
 
     def get[T1, T2]( # pylint: disable=invalid-name
         self,
-        property_type: T1 | type[T1],  # The order in "T1 | type[T1]" matters
+        property: type[T1],  # The order in "T1 | type[T1]" matters
         default: T2 = None,
     ) -> T1 | T2:
         """Get a component from the kind"""
-        return self._properties.get(
-            property_type if isinstance(property_type, type) else type(property_type),
-            (
-                default
-                if isinstance(property_type, type) or default is not None
-                else property_type
-            ),
-        )  # type: ignore
+        return self._properties.get(property, default)
 
     def delete(self, property_type: type) -> None:
         """Delete a component from the kind"""

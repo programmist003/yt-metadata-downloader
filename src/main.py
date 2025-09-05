@@ -2,7 +2,7 @@
 
 import sys
 import urllib.request
-import pandas as pd
+from typing import Iterator, Iterable
 from furl import furl
 from icecream import ic  # pylint: disable=unused-import
 from kinds.kind import Kind
@@ -14,38 +14,41 @@ from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-i
 from utils import save_as_jsons
 
 
-resource_kinds: list[Kind] = [Video(), Playlist()]
+resource_kinds: list[Kind] = [Video(), Playlist(),]
 
 
 # TODO: fix bug. Does not work properly. Method Kind.get works properly. Example:
-# >> get_urls_kinds_and_ids({"https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1"})
+# >> process_urls({"https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1"})
 # >> {'https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1':
 #                                 {<kinds.playlist.Playlist object at 0x000001CE4BBAA900>:
 #                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1',
 #                                  <kinds.video.Video object at 0x000001CE4BBAA7B0>:
 #                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1'}}
-def get_urls_kinds_and_ids(urls: set[URL]) -> dict[URL, dict[Kind, Id | None]]:
+def process_urls(urls: Iterable[URL]) -> Iterator[tuple[Kind, URL, Id | None]]:
     """Get resource type, kind and id for each URL"""
-    return {
-        url: {
-            kind: kind.get(ResourceIdGetter, lambda x: None)(url)
-            for kind in resource_kinds
-        }
-        for url in urls
-    }
+    for kind in resource_kinds:
+        ic(resource_kinds)
+        ic(kind.get(ResourceIdGetter))
+        ic((kind._properties))
+        ic(kind.get.__defaults__)
+        for url in urls:
+            yield (kind, url, kind.get(ResourceIdGetter, ResourceIdGetter())(url))
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
-    ids = pd.DataFrame(get_urls_kinds_and_ids(set(sys.argv[1:])))
     data: list[dict] = list()
-    for kind, ids in ids.iterrows():
+    ic(Playlist().get(ResourceIdGetter, ResourceIdGetter())("https://www.youtube.com/watch?v=zZVpXjZ9igs"))
+    ids: dict[Kind, list[Id]] = dict()
+    for kind, url, id in process_urls(sys.argv[1:]):
+        print(f"{kind}: {url} -> {id}")
+        if id is not None:
+            ids[kind] = ids.get(kind, list()) + [id]
+    for kind, ids_list in ids.items():
         print("working with:", kind)
-        partial_data = kind.get(DataGetter, lambda x: None)(  # type: ignore
-            list(filter(lambda x: x is not None, set(ids.values)))
-        )
+        partial_data = kind.get(DataGetter, DataGetter())(ids_list)
         data.extend(partial_data)
         save_as_jsons(partial_data)
     keys_levels = {"default": 1, "medium": 2, "high": 3, "standard": 4, "maxres": 5}
@@ -65,6 +68,9 @@ if __name__ == "__main__":
             continue
         print("downloading", thumbnail_url)
         filename = furl(thumbnail_url).path.segments[-1].split(".")
-        urllib.request.urlretrieve(
-            thumbnail_url, f"{filename[0]}[{item["id"]}].{filename[1]}"
-        )
+        try:
+            urllib.request.urlretrieve(
+                thumbnail_url, f"{filename[0]}[{item["id"]}].{filename[1]}"
+            )
+        except Exception as e:
+            print(e)

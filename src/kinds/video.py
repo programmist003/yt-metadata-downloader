@@ -11,7 +11,7 @@ from auth import youtube
 
 class Video(Kind):
     """YouTube video resource kind"""
-
+    _properties: dict[type, object] = dict()
     def __init__(self, *properties: list):
         self.add(ResourceIdGetter(get_video_id))
         self.add(

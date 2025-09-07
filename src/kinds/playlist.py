@@ -19,7 +19,8 @@ def get_playlist_id(url: str) -> str | None:
 
 class Playlist(Kind):
     """YouTube playlist resource kind"""
-
+    
+    _properties: dict[type, object] = dict()
     def __init__(self, *properties: list):
         self.add(ResourceIdGetter(get_playlist_id))
         self.add(

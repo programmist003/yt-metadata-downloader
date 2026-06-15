@@ -14,25 +14,19 @@ from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-i
 from utils import save_as_jsons
 
 
-resource_kinds: list[Kind] = [Video(), Playlist(),]
+resource_kinds: list[Kind] = [
+    Video(),
+    Playlist(),
+]
 
 
-# TODO: fix bug. Does not work properly. Method Kind.get works properly. Example:
-# >> process_urls({"https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1"})
-# >> {'https://www.youtube.com/playlist?list=PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1':
-#                                 {<kinds.playlist.Playlist object at 0x000001CE4BBAA900>:
-#                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1',
-#                                  <kinds.video.Video object at 0x000001CE4BBAA7B0>:
-#                                  'PLmsony4NVQpxYb6B51t-uWWuGkph5rmf1'}}
 def process_urls(urls: Iterable[URL]) -> Iterator[tuple[Kind, URL, Id | None]]:
     """Get resource type, kind and id for each URL"""
-    for kind in resource_kinds:
-        ic(resource_kinds)
-        ic(kind.get(ResourceIdGetter))
-        ic((kind._properties))
-        ic(kind.get.__defaults__)
-        for url in urls:
-            yield (kind, url, kind.get(ResourceIdGetter, ResourceIdGetter())(url))
+    return (
+        (kind, url, kind.get(ResourceIdGetter, ResourceIdGetter())(url))
+        for kind in resource_kinds
+        for url in urls
+    )
 
 
 if __name__ == "__main__":
@@ -40,7 +34,6 @@ if __name__ == "__main__":
         print("Usage: python3 save_video_data.py URL1 URL2 ...")
         sys.exit(1)
     data: list[dict] = list()
-    ic(Playlist().get(ResourceIdGetter, ResourceIdGetter())("https://www.youtube.com/watch?v=zZVpXjZ9igs"))
     ids: dict[Kind, list[Id]] = dict()
     for kind, url, id in process_urls(sys.argv[1:]):
         print(f"{kind}: {url} -> {id}")

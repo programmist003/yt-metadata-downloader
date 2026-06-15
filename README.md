@@ -39,13 +39,19 @@ api_key = "YOUR_YOUTUBE_API_KEY"
 Выполните команду из корня проекта:
 
 ```bash
+python ytmeta.py URL1 URL2 ...
+```
+
+Альтернативно можно запускать напрямую:
+
+```bash
 python src/main.py URL1 URL2 ...
 ```
 
 Например:
 
 ```bash
-python src/main.py https://www.youtube.com/watch?v=dQw4w9WgXcQ https://www.youtube.com/playlist?list=PL... 
+python ytmeta.py https://www.youtube.com/watch?v=dQw4w9WgXcQ https://www.youtube.com/playlist?list=PL...
 ```
 
 Если запускаете из папки `src`, используйте:

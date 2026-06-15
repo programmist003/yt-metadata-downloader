@@ -6,3 +6,4 @@ responses.json
 stdout.log
 stderr.log
 planned.txt
+.vscode-chats/

@@ -1,3 +1,7 @@
 venv/
 config.toml
 __pycache__/
+input.txt
+responses.json
+stdout.log
+stderr.log

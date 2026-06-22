@@ -1,126 +1,62 @@
 # YouTube Metadata Downloader
 
-A Python tool for fetching YouTube video and playlist metadata using the YouTube Data API v3.
+Small Python tool to fetch YouTube video and playlist metadata (YouTube Data API v3).
 
-## Features
+Primary scenario (Windows): use the provided batch wrapper `ytmd.bat` from the project root.
 
-- Retrieve comprehensive metadata for YouTube videos
-- Retrieve comprehensive metadata for YouTube playlists
-- Fetch playlist item details (PlaylistItems)
-- Output raw API responses as JSON to stdout
-- Support for interactive URL input from stdin
-- Automatic API key loading from `config.toml`
-- Proper error handling and retry logic for failed requests
-
-## Supported URLs
-
-- Video URLs: `https://www.youtube.com/watch?v=VIDEO_ID`
-- Playlist URLs: `https://www.youtube.com/playlist?list=PLAYLIST_ID`
-
-## Installation
-
-1. Clone the repository or download the files
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Configuration
-
-Create a `config.toml` file in the project root directory with your YouTube API key:
-
-```toml
-api_key = "YOUR_YOUTUBE_API_KEY"
-```
-
-> The script loads the API key from `config.toml` when no key is provided interactively. Ensure you run the script from the project root or that `config.toml` is in your current working directory.
-
-## Usage
-
-### Interactive Mode (Recommended)
-
-Run the wrapper script from the project root:
-
-```bash
-python ytmd.py
-```
-
-The script will prompt you to:
-1. Enter a YouTube API key (press Enter to use the one from `config.toml`)
-2. Enter video/playlist URLs (one per line, press Enter twice to finish)
-3. Optionally enter playlist URLs to fetch PlaylistItems
-
-Results are output as JSON to stdout.
-
-### Batch Mode with File Redirection
-
-Redirect stdin and stdout for automated processing:
+Usage (Windows — recommended):
 
 ```cmd
-python ytmd.py < input.txt > responses.json 2> stderr.log
+ytmd.bat < input.txt > responses.json 2> stderr.log
 ```
 
-Where `input.txt` contains:
-- First line: empty (to use `config.toml`) or your API key
-- Following lines: YouTube URLs (one per line)
-- Blank line to separate video/playlist section
-- Additional playlist URLs for PlaylistItems section
-- Another blank line to finish
+Primary behavior:
+- Reads prompts from stderr and URLs from stdin according to the `input.txt` layout (see below).
+- Writes a JSON array of raw API responses to stdout (`response.json` in the example).
 
-### Output
+Alternative (other platforms): run the Python entrypoint `src/main.py` directly.
 
-- **stdout**: JSON array containing raw API responses for all requested resources
-- **stderr**: Processing logs, prompts, and error messages
+Usage (Linux / macOS / any platform with Python):
 
-## Project Structure
-
-- `ytmd.py` — Wrapper script to launch the main program from project root
-- `src/main.py` — Main application logic
-- `src/auth.py` — API key loading and authentication
-- `src/config.toml` — Configuration file (optional)
-- `src/kinds/` — Resource type handlers (video, playlist)
-- `src/properties/` — ID extraction and data retrieval logic
-- `src/type_aliases.py` — Type definitions
-- `src/utils.py` — Utility functions
-
-## API Response Format
-
-The output is a JSON array where each element represents an API response object:
-
-```json
-[
-  {
-    "kind": "youtube#video",
-    "id": "VIDEO_ID",
-    "snippet": { ... },
-    "contentDetails": { ... },
-    "statistics": { ... },
-    ...
-  },
-  {
-    "kind": "youtube#playlist",
-    "id": "PLAYLIST_ID",
-    ...
-  },
-  {
-    "kind": "youtube#playlistItem",
-    ...
-  }
-]
+```bash
+python src/main.py < input.txt > response.json 2> stderr.log
 ```
 
-## Important Notes
+Input file format (`input.txt`):
+- First line: empty to use `config.toml` or your YouTube API key.
+- Following lines: YouTube URLs (one per line) for videos and playlists.
+- A blank line separates the first resource section from the playlist-items section.
+- After the blank line: playlist URLs (one per line) to fetch `playlistItems`.
+- An empty line (or EOF) finishes input.
 
-- Your YouTube API key must have access to YouTube Data API v3
-- Be aware of API quota limits; each request consumes quota units
-- Never commit your `config.toml` with actual API keys to version control
-- Videos and playlists must be public or unlisted to be accessible via the API
-- The tool may fail for private or deleted resources
+Quick examples:
 
-## Error Handling
+- Use `config.toml` API key and fetch two videos:
 
-- Failed HTTP requests are retried up to 2 times with 1-second delays (for 5xx errors)
-- Invalid URLs are skipped with a warning
-- Duplicate URLs are filtered out
-- All errors and processing information are logged to stderr
+```cmd
+ytmd.bat < input.txt > out.json
+```
+
+Where `input.txt` could be:
+
+```
+
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+https://www.youtube.com/watch?v=lp-EO5I60KA
+
+
+```
+
+Notes and tips:
+- Ensure `python` is available in PATH on Windows for `ytmd.bat`.
+- `ytmd.bat` is the primary, user-facing entrypoint for Windows users; `src/main.py` is the cross-platform entrypoint.
+- Validate JSON with Python: `python -m json.tool response.json > nul && echo JSON_OK` (Windows) or `> /dev/null` on Unix.
+- Keep your `config.toml` out of version control.
+
+Project layout (important files):
+- `ytmd.bat` — Windows wrapper (preferred on Windows)
+- `run_main.bat` — wrapper that runs `src/main.py` and forwards args
+- `src/main.py` — main application logic (cross-platform entrypoint)
+- `src/auth.py`, `src/kinds/`, `src/properties/` — internal modules
+
+More details and examples are available in the repository.

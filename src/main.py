@@ -5,25 +5,21 @@ from __future__ import annotations
 import json
 import sys
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from typing import Optional
 
 from furl import furl
 from auth import load_api_key
-from kinds.video import get_video_id
-from kinds.playlist import get_playlist_id
+from src.links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 
-YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
 VIDEO_PARTS = "contentDetails,id,liveStreamingDetails,localizations,paidProductPlacementDetails,player,recordingDetails,snippet,statistics,status,topicDetails"
 PLAYLIST_PARTS = "contentDetails,id,localizations,player,snippet,status"
 PLAYLIST_ITEMS_PARTS = "contentDetails,id,snippet,status"
 MAX_RESULTS = 50
-RETRY_COUNT = 2
-RETRY_DELAY = 1
+from src.http_client import HttpClient
+from src.packager import videos_spec, playlists_spec, playlistitems_spec, channels_spec
+from src.links import id_extractor
 
 
 def prompt_stderr(message: str) -> Optional[str]:
@@ -46,13 +42,23 @@ def is_valid_url(url: str) -> bool:
 
 
 def get_resource_kind_and_id(url: str) -> tuple[Optional[str], Optional[Id]]:
-    """Detect resource kind and return (`video`|`playlist`, id) or (None, None)."""
-    v = get_video_id(url)
-    if v:
-        return "video", v
-    p = get_playlist_id(url)
-    if p:
-        return "playlist", p
+    """Detect resource kind and return (`video`|`playlist`, id) or (None, None).
+
+    Prefer `parse_url` from `src.links.parser`. Fall back to legacy
+    `kinds.video.get_video_id` / `kinds.playlist.get_playlist_id` for
+    compatibility.
+    """
+    parsed = parse_url(url)
+    ptype = parsed.get("type")
+    ident = parsed.get("identifier")
+
+    if ptype == "video" and ident:
+        return "video", ident
+    if ptype == "playlist" and ident:
+        return "playlist", ident
+    if ptype in ("channel_id", "channel_custom", "channel_handle"):
+        return "channel", ident
+
     return None, None
 
 
@@ -112,54 +118,26 @@ def is_playlist_url(url: str) -> bool:
     return kind == "playlist"
 
 
-def http_get_json(url: str) -> Optional[dict]:
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "yt-metadata-downloader/1.0"}
-    )
-    for attempt in range(1, RETRY_COUNT + 1):
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                return json.load(resp)
-        except urllib.error.HTTPError as error:
-            sys.stderr.write(f"HTTP error for URL {url}: {error.code} {error.reason}")
-            sys.stderr.write("\n")
-            sys.stderr.flush()
-            if attempt < RETRY_COUNT and 500 <= error.code < 600:
-                time.sleep(RETRY_DELAY)
-                sys.stderr.write(f"Retrying ({attempt + 1}/{RETRY_COUNT})...\n")
-                sys.stderr.flush()
-                continue
-            return None
-        except urllib.error.URLError as error:
-            sys.stderr.write(f"URL error for URL {url}: {error}\n")
-            sys.stderr.flush()
-            if attempt < RETRY_COUNT:
-                time.sleep(RETRY_DELAY)
-                sys.stderr.write(f"Retrying ({attempt + 1}/{RETRY_COUNT})...\n")
-                sys.stderr.flush()
-                continue
-            return None
-        except Exception as error:
-            sys.stderr.write(f"Request failed for URL {url}: {error}\n")
-            sys.stderr.flush()
-            if attempt < RETRY_COUNT:
-                time.sleep(RETRY_DELAY)
-                sys.stderr.write(f"Retrying ({attempt + 1}/{RETRY_COUNT})...\n")
-                sys.stderr.flush()
-                continue
-            return None
-    return None
-
-
 def fetch_videos(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
+    client = HttpClient()
     for i in range(0, len(ids), MAX_RESULTS):
         chunk = ids[i : i + MAX_RESULTS]
-        q = urllib.parse.urlencode(
-            {"part": VIDEO_PARTS, "id": ",".join(chunk), "key": api_key}
-        )
-        url = f"{YOUTUBE_API_BASE}/videos?{q}"
-        data = http_get_json(url)
+        url, params = videos_spec(chunk, api_key, VIDEO_PARTS)
+        data = client.get_json(url, params=params)
+        if data is None:
+            continue
+        items.extend(data.get("items", []))
+    return items
+
+
+def fetch_channels(ids: list[Id], api_key: str) -> list[dict]:
+    items: list[dict] = []
+    client = HttpClient()
+    for i in range(0, len(ids), MAX_RESULTS):
+        chunk = ids[i : i + MAX_RESULTS]
+        url, params = channels_spec(chunk, api_key, "snippet,contentDetails,statistics")
+        data = client.get_json(url, params=params)
         if data is None:
             continue
         items.extend(data.get("items", []))
@@ -168,13 +146,11 @@ def fetch_videos(ids: list[Id], api_key: str) -> list[dict]:
 
 def fetch_playlists(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
+    client = HttpClient()
     for i in range(0, len(ids), MAX_RESULTS):
         chunk = ids[i : i + MAX_RESULTS]
-        q = urllib.parse.urlencode(
-            {"part": PLAYLIST_PARTS, "id": ",".join(chunk), "key": api_key}
-        )
-        url = f"{YOUTUBE_API_BASE}/playlists?{q}"
-        data = http_get_json(url)
+        url, params = playlists_spec(chunk, api_key, PLAYLIST_PARTS)
+        data = client.get_json(url, params=params)
         if data is None:
             continue
         items.extend(data.get("items", []))
@@ -183,20 +159,18 @@ def fetch_playlists(ids: list[Id], api_key: str) -> list[dict]:
 
 def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
+    client = HttpClient()
     for pid in ids:
         page_token: Optional[str] = None
         while True:
-            qd = {
-                "part": PLAYLIST_ITEMS_PARTS,
-                "playlistId": pid,
-                "maxResults": MAX_RESULTS,
-                "key": api_key,
-            }
-            if page_token:
-                qd["pageToken"] = page_token
-            q = urllib.parse.urlencode(qd)
-            url = f"{YOUTUBE_API_BASE}/playlistItems?{q}"
-            data = http_get_json(url)
+            url, params = playlistitems_spec(
+                pid,
+                api_key,
+                PLAYLIST_ITEMS_PARTS,
+                max_results=MAX_RESULTS,
+                page_token=page_token,
+            )
+            data = client.get_json(url, params=params)
             if data is None:
                 sys.stderr.write(f"Failed to fetch playlist items for playlist {pid}\n")
                 sys.stderr.flush()
@@ -212,11 +186,25 @@ def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
     vids: list[Id] = []
     pls: list[Id] = []
     for url in urls:
-        kind, rid = get_resource_kind_and_id(url)
-        if kind == "video" and rid:
-            vids.append(rid)
-        elif kind == "playlist" and rid:
-            pls.append(rid)
+        parsed = parse_url(url)
+        ptype = parsed.get("type")
+        ident = parsed.get("identifier")
+
+        if ptype == "video" and ident:
+            vids.append(ident)
+        elif ptype == "playlist" and ident:
+            pls.append(ident)
+        elif ptype in ("channel_id", "channel_custom", "channel_handle"):
+            # channel_id: use directly; custom/handle: resolve via API
+            if ptype == "channel_id" and ident:
+                chans.append(ident)
+            else:
+                cid = id_extractor.resolve_channel_id(parsed, api_key)
+                if cid:
+                    chans.append(cid)
+                else:
+                    sys.stderr.write(f"Failed to resolve channel for URL {url}\n")
+                    sys.stderr.flush()
 
     responses: list[dict] = []
     if vids:
@@ -230,6 +218,12 @@ def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
             responses.extend(fetch_playlists(pls, api_key))
         except Exception as e:
             sys.stderr.write(f"API request failed for playlists: {e}\n")
+            sys.stderr.flush()
+    if chans:
+        try:
+            responses.extend(fetch_channels(chans, api_key))
+        except Exception as e:
+            sys.stderr.write(f"API request failed for channels: {e}\n")
             sys.stderr.flush()
     return responses
 

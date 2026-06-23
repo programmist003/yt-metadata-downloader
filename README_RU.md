@@ -7,13 +7,13 @@
 Быстрый старт (Windows):
 
 ```cmd
-ytmd.bat < input.txt > responses.json 2> stderr.log
+ytmd.bat < input.txt > responses.json 2> ytmd.log
 ```
 
 Быстрый старт (в любой системе):
 
 ```bash
-python src/main.py < input.txt > responses.json 2> stderr.log
+python src/main.py < input.txt > responses.json 2> ytmd.log
 ```
 
 Как это работает

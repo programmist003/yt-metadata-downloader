@@ -7,13 +7,13 @@ Small Python utility to fetch raw YouTube Data API v3 responses for videos, play
 Quick start (Windows):
 
 ```cmd
-ytmd.bat < input.txt > responses.json 2> stderr.log
+ytmd.bat < input.txt > responses.json 2> ytmd.log
 ```
 
 Quick start (any platform):
 
 ```bash
-python src/main.py < input.txt > responses.json 2> stderr.log
+python src/main.py < input.txt > responses.json 2> ytmd.log
 ```
 
 How it works

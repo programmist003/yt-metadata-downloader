@@ -44,9 +44,7 @@ def is_valid_url(url: str) -> bool:
 def get_resource_kind_and_id(url: str) -> tuple[Optional[str], Optional[Id]]:
     """Detect resource kind and return (`video`|`playlist`, id) or (None, None).
 
-    Prefer `parse_url` from `src.links.parser`. Fall back to legacy
-    `kinds.video.get_video_id` / `kinds.playlist.get_playlist_id` for
-    compatibility.
+    Uses `parse_url` from `src.links.parser` to extract the identifier.
     """
     parsed = parse_url(url)
     ptype = parsed.get("type")
@@ -185,6 +183,8 @@ def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
 def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
     vids: list[Id] = []
     pls: list[Id] = []
+    chans: list[Id] = []
+
     for url in urls:
         parsed = parse_url(url)
         ptype = parsed.get("type")
@@ -262,8 +262,12 @@ def main() -> int:
     raw.extend(fetch_raw_responses(first_block, api_key))
 
     # fetch playlistItems for second block
-    playlist_ids = [get_playlist_id(u) for u in second_block]
-    playlist_ids = [p for p in playlist_ids if p]
+    playlist_ids = []
+    for u in second_block:
+        parsed = parse_url(u)
+        ident = parsed.get("identifier")
+        if parsed.get("type") == "playlist" and ident:
+            playlist_ids.append(ident)
     try:
         raw.extend(fetch_playlist_items(playlist_ids, api_key))
     except Exception as e:

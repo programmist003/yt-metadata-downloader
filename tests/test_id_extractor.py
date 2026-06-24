@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.links.parser import parse_url
-from src.links import id_extractor
+from links.parser import parse_url
+from links import id_extractor
 
 
 class DummyResponse:

@@ -1,6 +1,6 @@
 import pytest
 
-from src.links.parser import parse_url, is_video_url, is_playlist_url
+from links.parser import parse_url, is_video_url, is_playlist_url
 
 
 @pytest.mark.parametrize(

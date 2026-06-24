@@ -9,7 +9,7 @@ from typing import Optional
 
 from furl import furl
 from auth import load_api_key
-from src.links.parser import parse_url
+from links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 
@@ -17,9 +17,9 @@ VIDEO_PARTS = "contentDetails,id,liveStreamingDetails,localizations,paidProductP
 PLAYLIST_PARTS = "contentDetails,id,localizations,player,snippet,status"
 PLAYLIST_ITEMS_PARTS = "contentDetails,id,snippet,status"
 MAX_RESULTS = 50
-from src.http_client import HttpClient
-from src.packager import videos_spec, playlists_spec, playlistitems_spec, channels_spec
-from src.links import id_extractor
+from http_client import HttpClient
+from packager import videos_spec, playlists_spec, playlistitems_spec, channels_spec
+from links import id_extractor
 
 
 def prompt_stderr(message: str) -> Optional[str]:

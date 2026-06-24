@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from src.links.parser import parse_url
+from links.parser import parse_url
 
 
 YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"

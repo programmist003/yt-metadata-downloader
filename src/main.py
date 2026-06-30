@@ -121,7 +121,7 @@ def is_playlist_url(url: str) -> bool:
 def fetch_videos(ids: list[VideoId], api_key: str) -> list[dict]:
     responses: list[dict] = []
     client = HttpClient()
-    max_results = MAX_RESULTS["video"]
+    max_results = MAX_RESULTS
     for i in range(0, len(ids), max_results):
         chunk = [id.value for id in ids[i : i + max_results]]
         url, params = ids[0].query_maker.make_query(chunk, api_key)
@@ -135,7 +135,7 @@ def fetch_videos(ids: list[VideoId], api_key: str) -> list[dict]:
 def fetch_channels(ids: list[ChannelId], api_key: str) -> list[dict]:
     responses: list[dict] = []
     client = HttpClient()
-    max_results = MAX_RESULTS["channel"]
+    max_results = MAX_RESULTS
     for i in range(0, len(ids), max_results):
         chunk = [id.value for id in ids[i : i + max_results]]
         url, params = ids[0].query_maker.make_query(chunk, api_key)
@@ -149,7 +149,7 @@ def fetch_channels(ids: list[ChannelId], api_key: str) -> list[dict]:
 def fetch_playlists(ids: list[PlaylistId], api_key: str) -> list[dict]:
     responses: list[dict] = []
     client = HttpClient()
-    max_results = MAX_RESULTS["playlist"]
+    max_results = MAX_RESULTS
     for i in range(0, len(ids), max_results):
         chunk = [id.value for id in ids[i : i + max_results]]
         url, params = ids[0].query_maker.make_query(chunk, api_key)

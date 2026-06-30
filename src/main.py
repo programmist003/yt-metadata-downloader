@@ -15,14 +15,14 @@ from config import (
     PLAYLIST_ITEMS_PARTS,
     MAX_RESULTS,
     USER_AGENT,
+    YOUTUBE_API_BASE,
 )
 from error_handler import handle_errors, log_error
-from links.parser import parse_url
+from links.parser import parse_url, get_resource_id
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 from http_client import HttpClient
-from packager import videos_spec, playlists_spec, playlistitems_spec, channels_spec
-from links import id_extractor
+from resource_id import VideoId, PlaylistId, ChannelId
 
 
 def prompt_stderr(message: str) -> Optional[str]:
@@ -44,21 +44,19 @@ def is_valid_url(url: str) -> bool:
     return bool(parsed.scheme) and bool(parsed.host)
 
 
-def get_resource_kind_and_id(url: str) -> tuple[Optional[str], Optional[Id]]:
-    """Detect resource kind and return (`video`|`playlist`, id) or (None, None).
+def get_resource_kind_and_id(url: str) -> tuple[Optional[str], Optional[str]]:
+    """Detect resource kind and return (`video`|`playlist`|`channel`, id) or (None, None).
 
-    Uses `parse_url` from `src.links.parser` to extract the identifier.
+    Uses `get_resource_id` from `src.links.parser` to extract the identifier.
     """
-    parsed = parse_url(url)
-    ptype = parsed.get("type")
-    ident = parsed.get("identifier")
-
-    if ptype == "video" and ident:
-        return "video", ident
-    if ptype == "playlist" and ident:
-        return "playlist", ident
-    if ptype in ("channel_id", "channel_custom", "channel_handle"):
-        return "channel", ident
+    resource_id = get_resource_id(url)
+    if resource_id:
+        if isinstance(resource_id, VideoId):
+            return "video", resource_id.value
+        elif isinstance(resource_id, PlaylistId):
+            return "playlist", resource_id.value
+        elif isinstance(resource_id, ChannelId):
+            return "channel", resource_id.value
 
     return None, None
 
@@ -110,107 +108,99 @@ def collect_urls(
 
 
 def is_supported_resource_url(url: str) -> bool:
-    kind, _ = get_resource_kind_and_id(url)
-    return kind is not None
+    resource_id = get_resource_id(url)
+    return resource_id is not None
 
 
 def is_playlist_url(url: str) -> bool:
-    kind, _ = get_resource_kind_and_id(url)
-    return kind == "playlist"
+    resource_id = get_resource_id(url)
+    return isinstance(resource_id, PlaylistId)
 
 
 @handle_errors
-def fetch_videos(ids: list[Id], api_key: str) -> list[dict]:
-    items: list[dict] = []
+def fetch_videos(ids: list[VideoId], api_key: str) -> list[dict]:
+    responses: list[dict] = []
     client = HttpClient()
-    for i in range(0, len(ids), MAX_RESULTS):
-        chunk = ids[i : i + MAX_RESULTS]
-        url, params = videos_spec(chunk, api_key, VIDEO_PARTS)
+    max_results = MAX_RESULTS["video"]
+    for i in range(0, len(ids), max_results):
+        chunk = [id.value for id in ids[i : i + max_results]]
+        url, params = ids[0].query_maker.make_query(chunk, api_key)
         data = client.get_json(url, params=params)
-        if data is None:
-            continue
-        items.extend(data.get("items", []))
-    return items
+        if data is not None:
+            responses.append(data)
+    return responses
 
 
 @handle_errors
-def fetch_channels(ids: list[Id], api_key: str) -> list[dict]:
-    items: list[dict] = []
+def fetch_channels(ids: list[ChannelId], api_key: str) -> list[dict]:
+    responses: list[dict] = []
     client = HttpClient()
-    for i in range(0, len(ids), MAX_RESULTS):
-        chunk = ids[i : i + MAX_RESULTS]
-        url, params = channels_spec(chunk, api_key, "snippet,contentDetails,statistics")
+    max_results = MAX_RESULTS["channel"]
+    for i in range(0, len(ids), max_results):
+        chunk = [id.value for id in ids[i : i + max_results]]
+        url, params = ids[0].query_maker.make_query(chunk, api_key)
         data = client.get_json(url, params=params)
-        if data is None:
-            continue
-        items.extend(data.get("items", []))
-    return items
+        if data is not None:
+            responses.append(data)
+    return responses
 
 
 @handle_errors
-def fetch_playlists(ids: list[Id], api_key: str) -> list[dict]:
-    items: list[dict] = []
+def fetch_playlists(ids: list[PlaylistId], api_key: str) -> list[dict]:
+    responses: list[dict] = []
     client = HttpClient()
-    for i in range(0, len(ids), MAX_RESULTS):
-        chunk = ids[i : i + MAX_RESULTS]
-        url, params = playlists_spec(chunk, api_key, PLAYLIST_PARTS)
+    max_results = MAX_RESULTS["playlist"]
+    for i in range(0, len(ids), max_results):
+        chunk = [id.value for id in ids[i : i + max_results]]
+        url, params = ids[0].query_maker.make_query(chunk, api_key)
         data = client.get_json(url, params=params)
-        if data is None:
-            continue
-        items.extend(data.get("items", []))
-    return items
+        if data is not None:
+            responses.append(data)
+    return responses
 
 
 @handle_errors
-def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
-    items: list[dict] = []
+def fetch_playlist_items(ids: list[PlaylistId], api_key: str) -> list[dict]:
+    responses: list[dict] = []
     client = HttpClient()
-    for pid in ids:
+    for playlist_id in ids:
         page_token: Optional[str] = None
         while True:
-            url, params = playlistitems_spec(
-                pid,
-                api_key,
-                PLAYLIST_ITEMS_PARTS,
-                max_results=MAX_RESULTS,
-                page_token=page_token,
-            )
+            # Create a query for playlist items using the playlist ID
+            url = f"{YOUTUBE_API_BASE}/playlistItems"
+            params = {
+                "part": PLAYLIST_ITEMS_PARTS,
+                "playlistId": playlist_id.value,
+                "key": api_key,
+                "maxResults": MAX_RESULTS,
+                "pageToken": page_token,
+            }
             data = client.get_json(url, params=params)
             if data is None:
-                log_error(f"Failed to fetch playlist items for playlist {pid}")
+                log_error(f"Failed to fetch playlist items for playlist {playlist_id}")
                 break
-            items.extend(data.get("items", []))
+            responses.append(data)
             page_token = data.get("nextPageToken")
             if not page_token:
                 break
-    return items
+    return responses
 
 
 @handle_errors
 def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
-    vids: list[Id] = []
-    pls: list[Id] = []
-    chans: list[Id] = []
+    vids: list[VideoId] = []
+    pls: list[PlaylistId] = []
+    chans: list[ChannelId] = []
 
     for url in urls:
-        parsed = parse_url(url)
-        ptype = parsed.get("type")
-        ident = parsed.get("identifier")
-
-        if ptype == "video" and ident:
-            vids.append(ident)
-        elif ptype == "playlist" and ident:
-            pls.append(ident)
-        elif ptype in ("channel_id", "channel_custom", "channel_handle"):
-            # channel_id: use directly; custom/handle: resolve via API
-            if ptype == "channel_id" and ident:
-                chans.append(ident)
-            else:
-                cid = id_extractor.resolve_channel_id(parsed, api_key)
-                if cid:
-                    chans.append(cid)
-                else:
-                    log_error(f"Failed to resolve channel for URL {url}")
+        resource_id = get_resource_id(url)
+        if resource_id:
+            if isinstance(resource_id, VideoId):
+                vids.append(resource_id)
+            elif isinstance(resource_id, PlaylistId):
+                pls.append(resource_id)
+            elif isinstance(resource_id, ChannelId):
+                chans.append(resource_id)
 
     responses: list[dict] = []
     if vids:
@@ -258,10 +248,9 @@ def main() -> int:
     # fetch playlistItems for second block
     playlist_ids = []
     for u in second_block:
-        parsed = parse_url(u)
-        ident = parsed.get("identifier")
-        if parsed.get("type") == "playlist" and ident:
-            playlist_ids.append(ident)
+        resource_id = get_resource_id(u)
+        if isinstance(resource_id, PlaylistId):
+            playlist_ids.append(resource_id)
     raw.extend(fetch_playlist_items(playlist_ids, api_key) or [])
 
     # Write UTF-8 bytes to avoid console encoding issues on Windows

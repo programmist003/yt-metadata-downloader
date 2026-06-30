@@ -4,19 +4,22 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from typing import Optional
 
 from furl import furl
+
 from auth import load_api_key
+from config import (
+    VIDEO_PARTS,
+    PLAYLIST_PARTS,
+    PLAYLIST_ITEMS_PARTS,
+    MAX_RESULTS,
+    USER_AGENT,
+)
+from error_handler import handle_errors, log_error
 from links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
-
-VIDEO_PARTS = "contentDetails,id,liveStreamingDetails,localizations,paidProductPlacementDetails,player,recordingDetails,snippet,statistics,status,topicDetails"
-PLAYLIST_PARTS = "contentDetails,id,localizations,player,snippet,status"
-PLAYLIST_ITEMS_PARTS = "contentDetails,id,snippet,status"
-MAX_RESULTS = 50
 from http_client import HttpClient
 from packager import videos_spec, playlists_spec, playlistitems_spec, channels_spec
 from links import id_extractor
@@ -116,6 +119,7 @@ def is_playlist_url(url: str) -> bool:
     return kind == "playlist"
 
 
+@handle_errors
 def fetch_videos(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
     client = HttpClient()
@@ -129,6 +133,7 @@ def fetch_videos(ids: list[Id], api_key: str) -> list[dict]:
     return items
 
 
+@handle_errors
 def fetch_channels(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
     client = HttpClient()
@@ -142,6 +147,7 @@ def fetch_channels(ids: list[Id], api_key: str) -> list[dict]:
     return items
 
 
+@handle_errors
 def fetch_playlists(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
     client = HttpClient()
@@ -155,6 +161,7 @@ def fetch_playlists(ids: list[Id], api_key: str) -> list[dict]:
     return items
 
 
+@handle_errors
 def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
     items: list[dict] = []
     client = HttpClient()
@@ -170,8 +177,7 @@ def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
             )
             data = client.get_json(url, params=params)
             if data is None:
-                sys.stderr.write(f"Failed to fetch playlist items for playlist {pid}\n")
-                sys.stderr.flush()
+                log_error(f"Failed to fetch playlist items for playlist {pid}")
                 break
             items.extend(data.get("items", []))
             page_token = data.get("nextPageToken")
@@ -180,6 +186,7 @@ def fetch_playlist_items(ids: list[Id], api_key: str) -> list[dict]:
     return items
 
 
+@handle_errors
 def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
     vids: list[Id] = []
     pls: list[Id] = []
@@ -203,28 +210,15 @@ def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
                 if cid:
                     chans.append(cid)
                 else:
-                    sys.stderr.write(f"Failed to resolve channel for URL {url}\n")
-                    sys.stderr.flush()
+                    log_error(f"Failed to resolve channel for URL {url}")
 
     responses: list[dict] = []
     if vids:
-        try:
-            responses.extend(fetch_videos(vids, api_key))
-        except Exception as e:
-            sys.stderr.write(f"API request failed for videos: {e}\n")
-            sys.stderr.flush()
+        responses.extend(fetch_videos(vids, api_key) or [])
     if pls:
-        try:
-            responses.extend(fetch_playlists(pls, api_key))
-        except Exception as e:
-            sys.stderr.write(f"API request failed for playlists: {e}\n")
-            sys.stderr.flush()
+        responses.extend(fetch_playlists(pls, api_key) or [])
     if chans:
-        try:
-            responses.extend(fetch_channels(chans, api_key))
-        except Exception as e:
-            sys.stderr.write(f"API request failed for channels: {e}\n")
-            sys.stderr.flush()
+        responses.extend(fetch_channels(chans, api_key) or [])
     return responses
 
 
@@ -259,7 +253,7 @@ def main() -> int:
         sys.stderr.flush()
 
     raw: list[dict] = []
-    raw.extend(fetch_raw_responses(first_block, api_key))
+    raw.extend(fetch_raw_responses(first_block, api_key) or [])
 
     # fetch playlistItems for second block
     playlist_ids = []
@@ -268,11 +262,7 @@ def main() -> int:
         ident = parsed.get("identifier")
         if parsed.get("type") == "playlist" and ident:
             playlist_ids.append(ident)
-    try:
-        raw.extend(fetch_playlist_items(playlist_ids, api_key))
-    except Exception as e:
-        sys.stderr.write(f"API request failed for playlistItems: {e}\n")
-        sys.stderr.flush()
+    raw.extend(fetch_playlist_items(playlist_ids, api_key) or [])
 
     # Write UTF-8 bytes to avoid console encoding issues on Windows
     output = json.dumps(raw, ensure_ascii=False, indent=2)

@@ -8,15 +8,15 @@ import sys
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-
+from config import HTTP_RETRIES, HTTP_BACKOFF, HTTP_TIMEOUT
 
 class HttpClient:
     def __init__(
         self,
         verify: bool = True,
-        retries: int = 3,
-        backoff: float = 1.0,
-        timeout: int = 30,
+        retries: int = HTTP_RETRIES,
+        backoff: float = HTTP_BACKOFF,
+        timeout: int = HTTP_TIMEOUT,
     ):
         self.session = requests.Session()
         retry_strategy = Retry(

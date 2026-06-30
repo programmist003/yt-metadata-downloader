@@ -90,22 +90,4 @@ def is_playlist_url(url: str) -> bool:
     return parse_url(url)["type"] == "playlist"
 
 
-def get_resource_id(url: str) -> Optional[ResourceId]:
-    """Parse URL and return appropriate ResourceId object or None."""
-    from resource_id import VideoId, PlaylistId, ChannelId
-
-    parsed = parse_url(url)
-    ptype = parsed.get("type")
-    ident = parsed.get("identifier")
-
-    if ptype == "video" and ident:
-        return VideoId(ident)
-    elif ptype == "playlist" and ident:
-        return PlaylistId(ident)
-    elif ptype in ("channel_id", "channel_custom", "channel_handle") and ident:
-        return ChannelId(ident)
-    else:
-        return None
-
-
-__all__ = ["parse_url", "is_video_url", "is_playlist_url", "get_resource_id"]
+__all__ = ["parse_url", "is_video_url", "is_playlist_url"]

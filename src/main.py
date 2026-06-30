@@ -18,7 +18,7 @@ from config import (
     YOUTUBE_API_BASE,
 )
 from error_handler import handle_errors, log_error
-from links.parser import parse_url, get_resource_id
+from links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 from http_client import HttpClient
@@ -47,17 +47,19 @@ def is_valid_url(url: str) -> bool:
 def get_resource_kind_and_id(url: str) -> tuple[Optional[str], Optional[str]]:
     """Detect resource kind and return (`video`|`playlist`|`channel`, id) or (None, None).
 
-    Uses `get_resource_id` from `src.links.parser` to extract the identifier.
+    Uses `from_urls` methods from `resource_id` to extract the identifier.
     """
-    resource_id = get_resource_id(url)
-    if resource_id:
-        if isinstance(resource_id, VideoId):
-            return "video", resource_id.value
-        elif isinstance(resource_id, PlaylistId):
-            return "playlist", resource_id.value
-        elif isinstance(resource_id, ChannelId):
-            return "channel", resource_id.value
+    video_ids = VideoId.from_urls([url])
+    if video_ids[0] is not None:
+        return "video", video_ids[0].value
 
+    playlist_ids = PlaylistId.from_urls([url])
+    if playlist_ids[0] is not None:
+        return "playlist", playlist_ids[0].value
+
+    channel_ids = ChannelId.from_urls([url])
+    if channel_ids[0] is not None:
+        return "channel", channel_ids[0].value
     return None, None
 
 
@@ -108,13 +110,24 @@ def collect_urls(
 
 
 def is_supported_resource_url(url: str) -> bool:
-    resource_id = get_resource_id(url)
-    return resource_id is not None
+    video_ids = VideoId.from_urls([url])
+    if video_ids[0] is not None:
+        return True
+
+    playlist_ids = PlaylistId.from_urls([url])
+    if playlist_ids[0] is not None:
+        return True
+
+    channel_ids = ChannelId.from_urls([url])
+    if channel_ids[0] is not None:
+        return True
+
+    return False
 
 
 def is_playlist_url(url: str) -> bool:
-    resource_id = get_resource_id(url)
-    return isinstance(resource_id, PlaylistId)
+    playlist_ids = PlaylistId.from_urls([url])
+    return playlist_ids[0] is not None
 
 
 @handle_errors
@@ -193,15 +206,19 @@ def fetch_raw_responses(urls: list[URL], api_key: str) -> list[dict]:
     chans: list[ChannelId] = []
 
     for url in urls:
-        resource_id = get_resource_id(url)
-        if resource_id:
-            if isinstance(resource_id, VideoId):
-                vids.append(resource_id)
-            elif isinstance(resource_id, PlaylistId):
-                pls.append(resource_id)
-            elif isinstance(resource_id, ChannelId):
-                chans.append(resource_id)
+        video_ids = VideoId.from_urls([url])
+        if video_ids[0] is not None:
+            vids.append(video_ids[0])
+            continue
 
+        playlist_ids = PlaylistId.from_urls([url])
+        if playlist_ids[0] is not None:
+            pls.append(playlist_ids[0])
+            continue
+
+        channel_ids = ChannelId.from_urls([url])
+        if channel_ids[0] is not None:
+            chans.append(channel_ids[0])
     responses: list[dict] = []
     if vids:
         responses.extend(fetch_videos(vids, api_key) or [])
@@ -248,9 +265,9 @@ def main() -> int:
     # fetch playlistItems for second block
     playlist_ids = []
     for u in second_block:
-        resource_id = get_resource_id(u)
-        if isinstance(resource_id, PlaylistId):
-            playlist_ids.append(resource_id)
+        playlist_id = PlaylistId.from_urls([u])[0]
+        if playlist_id is not None:
+            playlist_ids.append(playlist_id)
     raw.extend(fetch_playlist_items(playlist_ids, api_key) or [])
 
     # Write UTF-8 bytes to avoid console encoding issues on Windows

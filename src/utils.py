@@ -27,3 +27,6 @@ def save_as_jsons(resources_data: list[dict]) -> None:
         resource_kind = kind.split("#")[-1]
         with open(f"{resource_kind}[{resource_id}].json", "w", encoding="utf-8") as f:
             json.dump(resource_data, f, ensure_ascii=False, indent=4)
+
+
+__all__ = ["clean_url", "check_domain", "save_as_jsons"]

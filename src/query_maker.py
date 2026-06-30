@@ -6,56 +6,60 @@ from typing import Dict, List, Tuple
 
 from config import YOUTUBE_API_BASE
 
+
 class QueryMaker:
     """Base class for creating YouTube API queries."""
 
     def __init__(self, parts: str):
         self.parts = parts
 
-    def make_query(self, resource_ids: List[str], api_key: str, max_results: int = 50) -> Tuple[str, Dict]:
+    def make_query(
+        self, resource_ids: List[str], api_key: str, max_results: int = 50
+    ) -> Tuple[str, Dict]:
         """Create a query for the given resource IDs."""
         raise NotImplementedError("This method should be implemented by subclasses.")
 
-class VideoQueryMaker(QueryMaker):
+
+class ResourceQueryMaker(QueryMaker):
+    """Query maker for resource resources."""
+
+    def __init__(self, resource_type: str, parts: str):
+        super().__init__(parts)
+        self.resource_type = resource_type
+
+    def make_query(
+        self, resource_ids: List[str], api_key: str, max_results: int = 50
+    ) -> Tuple[str, Dict]:
+        """Create a query for the given resource IDs."""
+        url = f"{YOUTUBE_API_BASE}/{self.resource_type}"
+        params = {
+            "part": self.parts,
+            "id": ",".join(resource_ids),
+            "key": api_key,
+            "maxResults": max_results,
+        }
+        return url, params
+
+
+class VideoQueryMaker(ResourceQueryMaker):
     """Query maker for video resources."""
 
-    def make_query(self, video_ids: List[str], api_key: str, max_results: int = 50) -> Tuple[str, Dict]:
-        """Create a query for videos."""
-        url = f"{YOUTUBE_API_BASE}/videos"
-        params = {
-            "part": self.parts,
-            "id": ",".join(video_ids),
-            "key": api_key,
-            "maxResults": max_results,
-        }
-        return url, params
+    def __init__(self, parts: str):
+        super().__init__("videos", parts)
 
-class PlaylistQueryMaker(QueryMaker):
+
+class PlaylistQueryMaker(ResourceQueryMaker):
     """Query maker for playlist resources."""
 
-    def make_query(self, playlist_ids: List[str], api_key: str, max_results: int = 50) -> Tuple[str, Dict]:
-        """Create a query for playlists."""
-        url = f"{YOUTUBE_API_BASE}/playlists"
-        params = {
-            "part": self.parts,
-            "id": ",".join(playlist_ids),
-            "key": api_key,
-            "maxResults": max_results,
-        }
-        return url, params
+    def __init__(self, parts: str):
+        super().__init__("playlists", parts)
 
-class ChannelQueryMaker(QueryMaker):
+
+class ChannelQueryMaker(ResourceQueryMaker):
     """Query maker for channel resources."""
 
-    def make_query(self, channel_ids: List[str], api_key: str, max_results: int = 50) -> Tuple[str, Dict]:
-        """Create a query for channels."""
-        url = f"{YOUTUBE_API_BASE}/channels"
-        params = {
-            "part": self.parts,
-            "id": ",".join(channel_ids),
-            "key": api_key,
-            "maxResults": max_results,
-        }
-        return url, params
+    def __init__(self, parts: str):
+        super().__init__("channels", parts)
+
 
 __all__ = ["QueryMaker", "VideoQueryMaker", "PlaylistQueryMaker", "ChannelQueryMaker"]

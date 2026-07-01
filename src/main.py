@@ -22,7 +22,7 @@ from links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 from http_client import HttpClient
-from resource_id import VideoId, PlaylistId, ChannelId
+from resource_id.resource_id import VideoId, PlaylistId, ChannelId
 
 
 def prompt_stderr(message: str) -> Optional[str]:

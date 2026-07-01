@@ -7,3 +7,4 @@ stdout.log
 stderr.log
 planned.txt
 .vscode-chats/
+.continue-chat-sessions

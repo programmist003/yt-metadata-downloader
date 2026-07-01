@@ -4,6 +4,8 @@ import json
 from urllib.request import urlopen
 from furl import furl
 
+from url import URL
+
 
 def clean_url(url: str) -> str:
     """Resolve redirects and return final URL."""
@@ -29,4 +31,24 @@ def save_as_jsons(resources_data: list[dict]) -> None:
             json.dump(resource_data, f, ensure_ascii=False, indent=4)
 
 
-__all__ = ["clean_url", "check_domain", "save_as_jsons"]
+def is_youtube_url(url: URL) -> bool:
+    """Check if the host is a YouTube domain.
+
+    Args:
+        url: URL object to check.
+
+    Returns:
+        bool: True if the URL belongs to YouTube, False otherwise.
+    """
+    youtube_domains = (
+        "youtube.com",
+        "www.youtube.com",
+        "youtu.be",
+        "m.youtube.com",
+        "music.youtube.com",
+        "gaming.youtube.com",
+    )
+    return any(domain in url.host for domain in youtube_domains)
+
+
+__all__ = ["clean_url", "check_domain", "save_as_jsons", "is_youtube_url"]

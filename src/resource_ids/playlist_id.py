@@ -14,7 +14,7 @@ from urllib.parse import parse_qs
 from query_maker import (
     PlaylistQueryMaker,
 )
-from resource_ids.resource_id import ResourceId, ResourceIdBase
+from resource_ids.resource_id import ResourceIdBase
 from url import URL
 from utils import is_youtube_url
 

@@ -20,7 +20,6 @@ class ResourceId(ABC):
     @abstractmethod
     def from_urls(cls, urls: List[str]) -> List[Union[ResourceId, None]]:
         """Create a list of ResourceId from a list of URLs."""
-        pass
 
 
 @dataclass

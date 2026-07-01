@@ -15,7 +15,7 @@ from urllib.parse import parse_qs
 import re
 
 from query_maker import VideoQueryMaker
-from resource_ids.resource_id import ResourceId, ResourceIdBase
+from resource_ids.resource_id import ResourceIdBase
 from url import URL
 
 

@@ -10,19 +10,17 @@ from furl import furl
 
 from auth import load_api_key
 from config import (
-    VIDEO_PARTS,
-    PLAYLIST_PARTS,
     PLAYLIST_ITEMS_PARTS,
     MAX_RESULTS,
-    USER_AGENT,
     YOUTUBE_API_BASE,
 )
 from error_handler import handle_errors, log_error
-from links.parser import parse_url
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 from http_client import HttpClient
-from resource_id.resource_id import VideoId, PlaylistId, ChannelId
+from resource_ids.video_id import VideoId
+from resource_ids.playlist_id import PlaylistId
+from resource_ids.channel_id import ChannelId
 
 
 def prompt_stderr(message: str) -> Optional[str]:

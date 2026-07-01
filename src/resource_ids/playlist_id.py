@@ -1,3 +1,10 @@
+"""Module for parsing and handling YouTube playlist URLs.
+
+This module provides the PlaylistId class, which is responsible for parsing
+YouTube playlist URLs and extracting the playlist identifier. It uses the URL
+class for parsing and is_youtube_url for domain validation.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,13 +14,13 @@ from urllib.parse import parse_qs
 from query_maker import (
     PlaylistQueryMaker,
 )
-from resource_ids.resource_id import ResourceId
+from resource_ids.resource_id import ResourceId, ResourceIdBase
 from url import URL
 from utils import is_youtube_url
 
 
 @dataclass
-class PlaylistId(ResourceId):
+class PlaylistId(ResourceIdBase):
     """Identifier for playlist resources."""
 
     def __init__(self, value: str):
@@ -60,7 +67,7 @@ class PlaylistId(ResourceId):
         for url in urls:
             parsed = cls._parse_playlist_url(url)
             if parsed and parsed.get("type") == "playlist":
-                playlist_ids.append(cls(value=parsed["identifier"])) # type: ignore
+                playlist_ids.append(cls(value=parsed["identifier"]))  # type: ignore
             else:
                 playlist_ids.append(None)
         return playlist_ids

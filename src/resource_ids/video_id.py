@@ -1,3 +1,12 @@
+"""Module for parsing and handling YouTube video URLs.
+
+This module provides the VideoId class, which is responsible for parsing
+YouTube video URLs and extracting the video identifier. It supports various
+URL formats, including short URLs (youtu.be), standard URLs with query
+parameters, and embed URLs. The module uses the URL class for parsing and
+validates the domain to ensure it belongs to YouTube.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,12 +15,12 @@ from urllib.parse import parse_qs
 import re
 
 from query_maker import VideoQueryMaker
-from resource_ids.resource_id import ResourceId
+from resource_ids.resource_id import ResourceId, ResourceIdBase
 from url import URL
 
 
 @dataclass
-class VideoId(ResourceId):
+class VideoId(ResourceIdBase):
     """Identifier for video resources."""
 
     def __init__(self, value: str):
@@ -91,7 +100,7 @@ class VideoId(ResourceId):
         for url in urls:
             parsed = cls._parse_video_url(url)
             if parsed and parsed.get("type") == "video":
-                video_ids.append(cls(value=parsed["identifier"])) # type: ignore
+                video_ids.append(cls(value=parsed["identifier"]))  # type: ignore
             else:
                 video_ids.append(None)
         return video_ids

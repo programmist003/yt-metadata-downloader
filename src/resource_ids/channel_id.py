@@ -1,3 +1,10 @@
+"""
+Module for handling YouTube channel IDs and parsing them from URLs.
+
+This module provides the ChannelId class which represents a YouTube channel identifier
+and includes methods for parsing channel IDs from various URL formats.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,13 +14,13 @@ import re
 from query_maker import (
     ChannelQueryMaker,
 )
-from resource_ids.resource_id import ResourceId
+from resource_ids.resource_id import ResourceIdBase
 from url import URL
 from utils import is_youtube_url
 
 
 @dataclass
-class ChannelId(ResourceId):
+class ChannelId(ResourceIdBase):
     """Identifier for channel resources."""
 
     def __init__(self, value: str):
@@ -57,7 +64,7 @@ class ChannelId(ResourceId):
         for url in urls:
             parsed = cls._parse_channel_url(url)
             if parsed and parsed.get("type") == "channel_id":
-                channel_ids.append(cls(value=parsed["identifier"])) # type: ignore
+                channel_ids.append(cls(value=parsed["identifier"]))  # type: ignore
             else:
                 channel_ids.append(None)
         return channel_ids

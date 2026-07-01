@@ -1,15 +1,23 @@
+"""Module for parsing and handling custom YouTube channel URLs.
+
+This module provides the ChannelCustom class, which is responsible for parsing
+custom YouTube channel URLs (e.g., /c/ or /user/) and extracting the custom
+channel identifier. It uses the URL class for parsing and is_youtube_url for
+domain validation.
+"""
+
 from dataclasses import dataclass
 from typing import List, Union, Optional, Dict
 import re
 
-from resource_ids.resource_id import ResourceId
+from resource_ids.resource_id import ResourceIdBase
 from query_maker import ChannelQueryMaker
 from url import URL
 from utils import is_youtube_url
 
 
 @dataclass
-class ChannelCustom(ResourceId):
+class ChannelCustom(ResourceIdBase):
     """Identifier for custom channel resources."""
 
     def __init__(self, value: str):
@@ -64,7 +72,7 @@ class ChannelCustom(ResourceId):
         for url in urls:
             parsed = cls._parse_custom_channel_url(url)
             if parsed and parsed.get("type") == "channel_custom":
-                channel_customs.append(cls(value=parsed["identifier"])) # type: ignore
+                channel_customs.append(cls(value=parsed["identifier"]))  # type: ignore
             else:
                 channel_customs.append(None)
         return channel_customs

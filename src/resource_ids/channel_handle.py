@@ -1,3 +1,11 @@
+"""
+Module for handling YouTube channel handles.
+
+This module provides functionality to parse and work with YouTube channel handles,
+which are unique identifiers for YouTube channels in the format @handle.
+It includes methods to extract channel handles from URLs and create ChannelHandle objects.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,13 +15,13 @@ import re
 from query_maker import (
     ChannelQueryMaker,
 )
-from resource_ids.resource_id import ResourceId
+from resource_ids.resource_id import ResourceIdBase
 from url import URL
 from utils import is_youtube_url
 
 
 @dataclass
-class ChannelHandle(ResourceId):
+class ChannelHandle(ResourceIdBase):
     """Identifier for channel handle resources."""
 
     def __init__(self, value: str):
@@ -68,7 +76,7 @@ class ChannelHandle(ResourceId):
         for url in urls:
             parsed = cls._parse_channel_handle_url(url)
             if parsed and parsed.get("type") == "channel_handle":
-                channel_handles.append(cls(value=parsed["identifier"])) # type: ignore
+                channel_handles.append(cls(value=parsed["identifier"]))  # type: ignore
             else:
                 channel_handles.append(None)
         return channel_handles

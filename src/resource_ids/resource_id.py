@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Union
 
-from query_maker import QueryMaker
+from query_makers import QueryMaker
 
 
 class ResourceId(ABC):
@@ -23,7 +23,7 @@ class ResourceId(ABC):
 
 
 @dataclass
-class ResourceIdBase:
+class ResourceIdBase(ResourceId):
     """Base class for resource identifiers."""
 
     value: str
@@ -34,7 +34,7 @@ class ResourceIdBase:
         return self.value
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ResourceIdBase):
+        if not isinstance(other, ResourceId):
             return False
         return self.value == other.value and self.kind == other.kind
 

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, List, Union
 import re
 
-from query_maker import (
+from query_makers import (
     ChannelQueryMaker,
 )
 from resource_ids.resource_id import ResourceIdBase

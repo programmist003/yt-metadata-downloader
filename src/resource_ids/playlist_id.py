@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, List, Union
 from urllib.parse import parse_qs
 
-from query_maker import (
+from query_makers import (
     PlaylistQueryMaker,
 )
 from resource_ids.resource_id import ResourceIdBase

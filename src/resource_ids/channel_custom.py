@@ -11,7 +11,7 @@ from typing import List, Union, Optional, Dict
 import re
 
 from resource_ids.resource_id import ResourceIdBase
-from query_maker import ChannelQueryMaker
+from query_makers import ChannelQueryMaker
 from url import URL
 from utils import is_youtube_url
 

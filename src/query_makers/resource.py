@@ -43,9 +43,9 @@ class ResourceQueryMaker(QueryMaker):
         }
         return url, params
 
-    def _filter_valid_ids(self, resource_ids: List[T]) -> List[T]:
+    def _filter_valid_ids(self, resource_ids: List[T] | Tuple[T]) -> List[T]:
         """Filter valid resource IDs for this QueryMaker."""
         if isinstance(self.valid_id_types, tuple):
-            return [id_ for id_ in resource_ids if isinstance(id_, self.valid_id_types)]
+            return [id_ for id_ in resource_ids if isinstance(id_, self.valid_id_types)]  # type: ignore
         else:
-            return [id_ for id_ in resource_ids if isinstance(id_, self.valid_id_types)]
+            return [id_ for id_ in resource_ids if isinstance(id_, self.valid_id_types)]  # type: ignore

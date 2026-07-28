@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Optional
+from typing import Iterable, Optional, Sequence, Type, Dict, List, Tuple
 
 from furl import furl
 
@@ -15,12 +15,37 @@ from config import (
     YOUTUBE_API_BASE,
 )
 from error_handler import handle_errors, log_error
+from resource_ids import (
+    ResourceId,
+    VideoId,
+    PlaylistId,
+    ChannelId,
+    ChannelCustom,
+    ChannelHandle,
+)
+
+from query_makers import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from type_aliases import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 from http_client import HttpClient
-from resource_ids.video_id import VideoId
-from resource_ids.playlist_id import PlaylistId
-from resource_ids.channel_id import ChannelId
+
+MAIN_QUERY_MAKERS = [
+    VideoQueryMaker,
+    PlaylistQueryMaker,
+    ChannelQueryMaker,
+    ChannelCustomQueryMaker,
+    ChannelHandleQueryMaker,
+    PlaylistItemsQueryMaker,
+]
+
+SUPPORTED_IDS: Iterable[Type[ResourceId]] = [
+    ResourceId,
+    VideoId,
+    PlaylistId,
+    ChannelId,
+    ChannelCustom,
+    ChannelHandle,
+]
 
 
 def prompt_stderr(message: str) -> Optional[str]:
@@ -31,6 +56,24 @@ def prompt_stderr(message: str) -> Optional[str]:
     if line == "":
         return None
     return line.rstrip("\n")
+
+
+def get_resource_ids(url: str) -> List[ResourceId]:
+    """Determine the type of resource for a given URL."""
+    resource_ids = []
+    for resource_id in SUPPORTED_IDS:
+        resource_ids_ = resource_id.from_urls([url])
+        if resource_ids_[0] is not None:
+            resource_ids.append(resource_ids_[0])
+    return resource_ids
+
+def determine_resource_type(url: str) -> Tuple[Optional[Type[ResourceId]], str]:
+    """Determine the type of resource for a given URL."""
+    for resource_id in SUPPORTED_IDS:
+        resource_ids = resource_id.from_urls([url])
+        if resource_ids[0] is not None:
+            return resource_id, resource_id.__name__
+    return None, "unsupported"
 
 
 def collect_urls(
@@ -59,24 +102,67 @@ def collect_urls(
             break
 
         if url in seen:
-            sys.stderr.write(f"Duplicate URL ignored: {url}\n")
+            sys.stderr.write(f"Duplicate URL ignored: {url} (duplicated)\n")
             sys.stderr.flush()
             continue
 
-        if not is_valid_url(url):
-            sys.stderr.write(f"Invalid URL ignored: {url}\n")
-            sys.stderr.flush()
-            continue
-
-        if not validation(url):
-            sys.stderr.write(f"Unsupported URL ignored: {url}\n")
-            sys.stderr.flush()
-            continue
+        resource_type, type_name = determine_resource_type(url)
+        sys.stderr.write(f"URL type: {type_name}\n")
+        sys.stderr.flush()
 
         urls.append(url)
         seen.add(url)
 
     return urls
+
+
+def group_urls_by_resource_type(
+    urls: list[str],
+) -> Dict[Type[ResourceId], List[List[Tuple[str, ResourceId]]]]:
+    """Group URLs by resource type and split into chunks of MAX_RESULTS."""
+    grouped_urls: Dict[Type[ResourceId], List[List[Tuple[str, ResourceId]]]] = {}
+
+    for url in urls:
+        resource_type, _ = determine_resource_type(url)
+        if resource_type is None:
+            continue
+
+        resource_ids = resource_type.from_urls([url])
+        if resource_ids[0] is None:
+            continue
+
+        if resource_type not in grouped_urls:
+            grouped_urls[resource_type] = []
+
+        if (
+            not grouped_urls[resource_type]
+            or len(grouped_urls[resource_type][-1]) >= MAX_RESULTS
+        ):
+            grouped_urls[resource_type].append([])
+
+        grouped_urls[resource_type][-1].append((url, resource_ids[0]))
+
+    return grouped_urls
+
+
+def fetch_raw_responses(urls: list[str], api_key: str) -> list[dict]:
+    """Fetch raw responses from YouTube API for the given URLs."""
+
+    grouped_urls = group_urls_by_resource_type(urls)
+    raw_responses: list[dict] = []
+    http_client = HttpClient()
+
+    for resource_type, url_chunks in grouped_urls.items():
+        for chunk in url_chunks:
+            resource_ids = [resource_id for _, resource_id in chunk]
+            query_maker = resource_ids[0].query_maker
+            url, params = query_maker.make_query(resource_ids, api_key)
+
+            response = http_client.get_json(url, params)
+            if response:
+                raw_responses.append(response)
+
+    return raw_responses
 
 
 def main() -> int:
@@ -91,18 +177,18 @@ def main() -> int:
             sys.stderr.write(
                 "YouTube API key not provided and not found in config.toml.\n"
             )
-            sys.stderr.flush()
-            return 1
+        sys.stderr.flush()
+        return 1
 
     seen: set[str] = set()
 
     first_block = collect_urls(
         "Enter supported resource URLs (video or playlist).",
-        is_supported_resource_url,
+        None,  # Validation is handled by determine_resource_type
         seen=seen,
     )
     second_block = collect_urls(
-        "Enter playlist URLs for PlaylistItems.", is_playlist_url, seen=seen
+        "Enter playlist URLs for PlaylistItems.", None, seen=seen
     )
 
     if second_block and not first_block:
@@ -113,13 +199,7 @@ def main() -> int:
     raw.extend(fetch_raw_responses(first_block, api_key) or [])
 
     # fetch playlistItems for second block
-    playlist_ids = []
-    for u in second_block:
-        playlist_id = PlaylistId.from_urls([u])[0]
-        if playlist_id is not None:
-            playlist_ids.append(playlist_id)
-    raw.extend(fetch_playlist_items(playlist_ids, api_key) or [])
-
+    raw.extend(fetch_raw_responses(second_block, api_key) or [])
     # Write UTF-8 bytes to avoid console encoding issues on Windows
     output = json.dumps(raw, ensure_ascii=False, indent=2)
     sys.stdout.buffer.write(output.encode("utf-8"))

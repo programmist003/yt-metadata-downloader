@@ -12,9 +12,6 @@ from dataclasses import dataclass
 from typing import Optional, Dict, List, Union
 import re
 
-from query_makers import (
-    ChannelQueryMaker,
-)
 from resource_ids.resource_id import ResourceIdBase
 from url import URL
 from utils import is_youtube_url
@@ -28,7 +25,6 @@ class ChannelHandle(ResourceIdBase):
         super().__init__(
             value=value,
             kind="youtube#channel",
-            query_maker=ChannelQueryMaker("snippet,contentDetails,statistics"),
         )
 
     @classmethod

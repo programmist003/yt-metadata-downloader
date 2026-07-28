@@ -6,9 +6,7 @@ from typing import Dict, List, Tuple, TypeVar
 
 from config import MAX_RESULTS
 
-from resource_ids.resource_id import ResourceId
-
-T = TypeVar("T", bound=ResourceId)
+T = TypeVar("T")
 
 
 class QueryMaker:

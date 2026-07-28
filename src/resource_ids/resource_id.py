@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Union
-
-from query_makers import QueryMaker
+from typing import Dict, List, Optional, Union
 
 
 class ResourceId(ABC):
@@ -14,12 +12,11 @@ class ResourceId(ABC):
 
     value: str
     kind: str
-    query_maker: QueryMaker
 
     @classmethod
     @abstractmethod
-    def from_urls(cls, urls: List[str]) -> List[Union[ResourceId, None]]:
-        """Create a list of ResourceId from a list of URLs."""
+    def from_url(cls, url: str) -> Optional[ResourceId]:
+        """Create a ResourceId from URL"""
 
 
 @dataclass
@@ -28,7 +25,6 @@ class ResourceIdBase(ResourceId):
 
     value: str
     kind: str
-    query_maker: QueryMaker
 
     def __str__(self) -> str:
         return self.value

@@ -11,12 +11,12 @@ Example:
     >>> print(video_id)
 """
 
-from resource_ids.resource_id import ResourceId, ResourceIdBase
-from resource_ids.video_id import VideoId
-from resource_ids.playlist_id import PlaylistId
-from resource_ids.channel_id import ChannelId
-from resource_ids.channel_handle import ChannelHandle
-from resource_ids.channel_custom import ChannelCustom
+from .resource_id import ResourceId, ResourceIdBase
+from .video_id import VideoId
+from .playlist_id import PlaylistId
+from .channel_id import ChannelId
+from .channel_handle import ChannelHandle
+from .channel_custom import ChannelCustom
 
 __all__ = [
     "ResourceId",

@@ -11,9 +11,6 @@ from dataclasses import dataclass
 from typing import Optional, Dict, List, Union
 from urllib.parse import parse_qs
 
-from query_makers import (
-    PlaylistQueryMaker,
-)
 from resource_ids.resource_id import ResourceIdBase
 from url import URL
 from utils import is_youtube_url
@@ -27,7 +24,6 @@ class PlaylistId(ResourceIdBase):
         super().__init__(
             value=value,
             kind="youtube#playlist",
-            query_maker=PlaylistQueryMaker("contentDetails,id,snippet,status"),
         )
 
     @classmethod

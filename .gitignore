@@ -6,5 +6,7 @@ responses.json
 stdout.log
 stderr.log
 planned.txt
+planned.md
+requested.md
 .vscode-chats/
 .continue-chat-sessions

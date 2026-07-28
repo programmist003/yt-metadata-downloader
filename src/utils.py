@@ -1,11 +1,15 @@
 """Utility helpers used across the project."""
 
 import json
+from typing import Dict, List
 from urllib.request import urlopen
 from furl import furl
 
 from url import URL
+from type_vars import K, V
 
+def normalize_dict(listed_dict: Dict[K, List[V]]):
+    return {k: v[-1] for k, v in listed_dict.items()}
 
 def clean_url(url: str) -> str:
     """Resolve redirects and return final URL."""
@@ -13,10 +17,9 @@ def clean_url(url: str) -> str:
         return response.geturl()
 
 
-def check_domain(url: str) -> bool:
+def check_domain(url: URL) -> bool:
     """Return True if URL host belongs to YouTube."""
-    host = furl(url).host
-    return host in ("youtube.com", "www.youtube.com", "youtu.be")
+    return url.host in ("youtube.com", "www.youtube.com", "youtu.be")
 
 
 def save_as_jsons(resources_data: list[dict]) -> None:

@@ -5,8 +5,8 @@ with various components including scheme, host, port, path, query, and fragment.
 """
 
 from dataclasses import dataclass
-from typing import Optional
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Optional
+from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
 
 
 @dataclass
@@ -17,29 +17,32 @@ class URL:
         scheme (str): The scheme of the URL (e.g., 'http', 'https').
         host (str): The host or domain name (e.g., 'example.com').
         port (Optional[int]): The port number. Defaults to None.
-        path (str): The path component of the URL. Defaults to '/'.
-        query (Optional[str]): The query string. Defaults to None.
+        path (List[str]): The path component of the URL. Defaults to [].
+        query (Optional[Dict[str, List[str]]]): The query dict. Defaults to None.
         fragment (Optional[str]): The fragment identifier. Defaults to None.
     """
 
     scheme: str
     host: str
+    path: List[str]
     port: Optional[int] = None
-    path: str = "/"
-    query: Optional[str] = None
+    query: Optional[Dict[str, List[str]]] = None
     fragment: Optional[str] = None
 
     def __str__(self) -> str:
         """Constructs the URL string from its components."""
-        url = f"{self.scheme}://{self.host}"
-        if self.port is not None:
-            url += f":{self.port}"
-        url += self.path
-        if self.query is not None:
-            url += f"?{self.query}"
-        if self.fragment is not None:
-            url += f"#{self.fragment}"
-        return url
+        path_str = "/" + "/".join(self.path) if self.path else ""
+        netloc = f"{self.host}:{self.port}" if self.port is not None else self.host
+        query_str = urlencode(self.query, doseq=True) if self.query else ""
+        return urlunparse((
+            self.scheme,
+            netloc,
+            path_str,
+            # self.params,
+            query_str,
+            self.fragment
+        ))
+
 
     @classmethod
     def parse(cls, url_str: str) -> "URL":
@@ -55,26 +58,12 @@ class URL:
             ValueError: If the URL string is invalid.
         """
         parsed = urlparse(url_str)
-        if not parsed.scheme or not parsed.netloc:
-            raise ValueError("Invalid URL: missing scheme or host")
 
-        # Extract host and port
-        host = parsed.netloc
-        port = None
-        if ":" in host:
-            host, port_str = host.split(":", 1)
-            try:
-                port = int(port_str)
-            except ValueError:
-                raise ValueError("Invalid port number")
-
-        # Extract path
-        path = parsed.path if parsed.path else "/"
-
-        # Extract query
-        query = parsed.query if parsed.query else None
-
-        # Extract fragment
+        netloc = parsed.netloc
+        host = netloc.split(":")[0] if netloc else ""
+        port = int(netloc.split(":")[1]) if ":" in netloc else None
+        path = parsed.path.strip("/").split("/") if parsed.path else []
+        query = parse_qs(parsed.query, keep_blank_values=True) if parsed.query else None
         fragment = parsed.fragment if parsed.fragment else None
 
         return cls(

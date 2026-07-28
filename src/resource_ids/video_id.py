@@ -14,9 +14,9 @@ from typing import Optional, Dict, List, Union
 from urllib.parse import parse_qs
 import re
 
-from query_maker import VideoQueryMaker
 from resource_ids.resource_id import ResourceIdBase
 from url import URL
+from utils import normalize_dict
 
 
 @dataclass
@@ -27,42 +27,34 @@ class VideoId(ResourceIdBase):
         super().__init__(
             value=value,
             kind="youtube#video",
-            query_maker=VideoQueryMaker("contentDetails,id,snippet,statistics,status"),
         )
 
     @classmethod
     def _parse_short_video_url(
         cls, url_obj: URL
-    ) -> Optional[Dict[str, Union[str, None]]]:
+    ) -> Optional[str]:
         """Parse short YouTube URL (youtu.be)."""
         vid = url_obj.path.lstrip("/")
         if vid:
-            return {"type": "video", "raw": str(url_obj), "identifier": vid}
+            return vid
         return None
 
     @classmethod
-    def _parse_video_from_query(
-        cls, url_obj: URL
-    ) -> Optional[Dict[str, Union[str, None]]]:
+    def _parse_video_from_query(cls, url_obj: URL) -> Optional[str]:
         """Parse video ID from query parameters."""
-        if url_obj.query:
-            query_params = parse_qs(url_obj.query)
-            if "v" in query_params and query_params["v"]:
-                return {
-                    "type": "video",
-                    "raw": str(url_obj),
-                    "identifier": query_params["v"][0],
-                }
+        query_params = url_obj.query
+        if query_params and "v" in query_params and query_params["v"]:
+            return query_params["v"][0]
         return None
 
     @classmethod
     def _parse_video_from_embed(
         cls, url_obj: URL
-    ) -> Optional[Dict[str, Union[str, None]]]:
+    ) -> Optional[str]:
         """Parse video ID from embed path."""
         m = re.match(r"^/embed/([^/]+)", url_obj.path)
         if m:
-            return {"type": "video", "raw": str(url_obj), "identifier": m.group(1)}
+            return m.group(1)
         return None
 
     @classmethod

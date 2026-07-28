@@ -6,11 +6,12 @@ from typing import Dict, List, Tuple, Type, Union, TypeVar
 
 from config import YOUTUBE_API_BASE
 
-from resource_ids.resource_id import ResourceId
+from .has_value_proto import HasValue
+
 
 from .base import QueryMaker
 
-T = TypeVar("T", bound=ResourceId)
+T = TypeVar("T", bound=HasValue)
 
 
 class ResourceQueryMaker(QueryMaker):

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional, Tuple, Union
 
 from urls.validated_url import ValidatedURL
 from ..url import URL
+from ..utils import cast_to_URL
 
 
 @dataclass
@@ -15,8 +16,8 @@ class Embed(ValidatedURL):
     fragment: Optional[str] = None
 
     @classmethod
-    def parse(cls, url_str: str) -> Optional["Embed"]:
-        url = URL.parse(url_str)
+    def parse(cls, url: Union[str, URL]) -> Optional["Embed"]:
+        url = cast_to_URL(url)
         if (
             url.host in ("youtube.com", "www.youtube.com")
             and url.query is None

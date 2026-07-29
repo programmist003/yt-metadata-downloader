@@ -1,30 +1,44 @@
+"""
+YouTube video ID extractor module.
+
+This module provides functions to extract video IDs from various YouTube URL formats,
+including short URLs (youtu.be), standard URLs with query parameters, and embed URLs.
+"""
+
 from typing import Optional
 
-from ..url import URL
+from urls.video import *  # pylint: disable=wildcard-import
+
+from ..urls.url import URL
+from .utils import parse_by_parsers
 
 
-def short(url_obj: URL) -> Optional[str]:
-    """Parse short YouTube URL (youtu.be)."""
-    vid = url_obj.path[0]
-    if vid and url_obj.host == "youtu.be":
+def short(url: URL) -> Optional[str]:
+    """Parse video ID from short YouTube URL (youtu.be)"""
+    parsed = Short.parse(url)
+    if parsed:
+        vid = parsed.path[0]
         return vid
-    return None
 
 
-def query(url_obj: URL) -> Optional[str]:
-    """Parse video ID from query parameters."""
-    query_params = url_obj.query
-    if query_params and "v" in query_params and query_params["v"]:
-        return query_params["v"][0]
-    return None
+def query(url: URL) -> Optional[str]:
+    """Parse video ID from standard YouTube URLs (e.g., youtube.com/watch?v=...)."""
+    parsed = Standart.parse(url)
+    if parsed:
+        query_params = parsed.query
+        return query_params["v"][-1]
 
 
-def embed(url_obj: URL) -> Optional[str]:
-    """Parse video ID from embed path."""
-    m = re.match(r"^/embed/([^/]+)", url_obj.path)
-    if m:
-        return m.group(1)
-    return None
+def embed(url: URL) -> Optional[str]:
+    """Parse video ID from YouTube embed URLs (e.g., youtube.com/embed/...)."""
+    parsed = Embed.parse(url)
+    if parsed:
+        return parsed.path[-1]
+
+
+def parse(url: URL) -> Optional[str]:
+    """Parse a YouTube video URL and extract video ID using multiple parsers."""
+    return parse_by_parsers(url, [short, embed, query])
 
 
 if __name__ == "__main__":
@@ -33,4 +47,3 @@ if __name__ == "__main__":
         "->",
         short(URL.parse("https://youtu.be/mtpEUZTdeNY?si=FXUSjGxMjMC3cIyq")),
     )
-    pass

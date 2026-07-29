@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional, Tuple, Union
 
-from urls.validated_url import ValidatedURL
+from ..utils import cast_to_URL
+from ..validated_url import ValidatedURL
 from ..url import URL
 
 
@@ -15,8 +16,8 @@ class Short(ValidatedURL):
     fragment: Optional[str] = None
 
     @classmethod
-    def parse(cls, url_str: str) -> Optional["Short"]:
-        url = URL.parse(url_str)
+    def parse(cls, url: Union[str, URL]) -> Optional["Short"]:
+        url = cast_to_URL(url)
         if url.host == "youtu.be" and url.query is None and len(url.path) == 1:
             return Short(
                 scheme=url.scheme,

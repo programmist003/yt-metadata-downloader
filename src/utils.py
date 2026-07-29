@@ -1,15 +1,16 @@
 """Utility helpers used across the project."""
 
 import json
-from typing import Dict, List
+from typing import Mapping, Sequence
 from urllib.request import urlopen
-from furl import furl
 
 from urls.url import URL
 from type_vars import K, V
 
-def normalize_dict(listed_dict: Dict[K, List[V]]):
+
+def normalize_dict(listed_dict: Mapping[K, Sequence[V]]) -> Mapping[K, V]:
     return {k: v[-1] for k, v in listed_dict.items()}
+
 
 def clean_url(url: str) -> str:
     """Resolve redirects and return final URL."""

@@ -5,7 +5,7 @@ from typing import Dict, List
 from urllib.request import urlopen
 from furl import furl
 
-from url import URL
+from urls.url import URL
 from type_vars import K, V
 
 def normalize_dict(listed_dict: Dict[K, List[V]]):

@@ -13,7 +13,7 @@ import re
 
 
 from resource_ids.resource_id import ResourceIdBase
-from url import URL
+from urls.url import URL
 from utils import is_youtube_url
 
 

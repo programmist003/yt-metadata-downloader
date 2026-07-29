@@ -12,7 +12,7 @@ from typing import Optional, Dict, List, Union
 from urllib.parse import parse_qs
 
 from resource_ids.resource_id import ResourceIdBase
-from url import URL
+from urls.url import URL
 from utils import is_youtube_url
 
 

@@ -15,7 +15,7 @@ from urllib.parse import parse_qs
 import re
 
 from resource_ids.resource_id import ResourceIdBase
-from url import URL
+from urls.url import URL
 from utils import normalize_dict
 
 

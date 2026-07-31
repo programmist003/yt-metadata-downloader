@@ -8,28 +8,28 @@ from ..url import URL
 
 
 @dataclass
-class Handle(ValidatedURL):
+class Id(ValidatedURL):
     scheme: str
     host: Literal["youtube.com", "www.youtube.com"]
-    path: Annotated[Tuple[str], 'starts with "@"']
+    path: Tuple[Literal["channel"], str]
     port: Optional[int] = None
     query: None = None
     fragment: Optional[str] = None
 
     @classmethod
-    def parse(cls, url: Union[str, URL]) -> Optional["Handle"]:
+    def parse(cls, url: Union[str, URL]) -> Optional["Id"]:
         url = cast_to_URL(url)
         if (
             url.host in ("youtube.com", "www.youtube.com")
             and url.query is None
-            and len(url.path) == 1
-            and url.path[0].startswith("@")
+            and len(url.path) == 2
+            and url.path[0] == "channel"
         ):
-            return Handle(
+            return Id(
                 scheme=url.scheme,
                 host=url.host,
                 port=url.port,
-                path=tuple(url.path),  # type: ignore
+                path=(url.path[0], url.path[1]),
                 query=url.query,
                 fragment=url.fragment,
             )
